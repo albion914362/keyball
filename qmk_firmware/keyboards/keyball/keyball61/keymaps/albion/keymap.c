@@ -298,20 +298,25 @@ led_config_t g_led_config = { {
 } };
 #endif
 
+#ifdef RGB_MATRIX_ENABLE
 void keyboard_post_init_user(void) { rgb_matrix_reload_from_eeprom(); }
+#endif
 
 layer_state_t layer_state_set_user(layer_state_t state)
 {
   keyball_set_scroll_mode(get_highest_layer(state) == 3);
+#ifdef RGB_MATRIX_ENABLE
+  // レイヤーと LED を連動させる（一時的な変更で、保存はされない）
   uint8_t layer = biton32(state);
   switch (layer) {
   case 4:
     rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-    rgb_matrix_sethsv_noeeprom(HSV_WHITE);
+    rgb_matrix_sethsv_noeeprom(0, 0, 255);
     break;
   default:
     rgb_matrix_reload_from_eeprom();
   }
+#endif
   return state;
 }
 
