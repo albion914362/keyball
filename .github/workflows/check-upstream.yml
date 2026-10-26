@@ -1,0 +1,96 @@
+# 公式 (Yowkees/keyball) の Keyball61 関連の更新を毎週チェックし、
+# 変更があれば Issue (ラベル「公式更新」) を作ってメールで知らせる。
+# 確認済みの位置は .github/upstream-checked.txt に書く。
+name: 公式の更新チェック (毎週)
+
+on:
+  schedule:
+    - cron: '7 21 * * 0' # 毎週月曜 6:07 (日本時間)
+  workflow_dispatch:
+    inputs:
+      base:
+        description: '比較の起点 (空なら upstream-checked.txt)'
+        required: false
+        type: string
+      dry_run:
+        description: 'Issue を作らず結果だけ表示する'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_BASE: ${{ inputs.base }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          UPSTREAM=Yowkees/keyball
+          PATHS="qmk_firmware/keyboards/keyball/keyball61 qmk_firmware/keyboards/keyball/lib qmk_firmware/keyboards/keyball/drivers .github"
+          BASE="${INPUT_BASE:-$(tr -d '[:space:]' < .github/upstream-checked.txt)}"
+
+          git remote add upstream "https://github.com/$UPSTREAM.git"
+          git fetch -q --filter=blob:none upstream main
+          HEAD=$(git rev-parse upstream/main)
+
+          COMMITS=$(git log --no-merges --date=short \
+            --format="- [\`%h\`](https://github.com/$UPSTREAM/commit/%H) %ad %s" \
+            "$BASE..upstream/main" -- $PATHS)
+          if [ -z "$COMMITS" ]; then
+            echo "変更なし (起点 ${BASE:0:7} → 公式最新 ${HEAD:0:7})" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          DIFF=$(git diff "$BASE" upstream/main -- $PATHS | head -c 45000)
+          {
+            echo "<!-- upstream-head: $HEAD -->"
+            echo "公式に Keyball61 関連の更新がありました（確認済み \`${BASE:0:7}\` → 公式最新 \`${HEAD:0:7}\`）。"
+            echo "取り込むかどうかは内容を見て判断してください。この時点では何も取り込んでいません。"
+            echo
+            echo "## 対象のコミット"
+            echo "$COMMITS"
+            echo
+            echo "## 変わったファイル"
+            echo '```'
+            git diff --stat "$BASE" upstream/main -- $PATHS
+            echo '```'
+            echo
+            echo "[公式の比較画面](https://github.com/$UPSTREAM/compare/${BASE:0:7}...${HEAD:0:7})"
+            echo
+            echo "<details><summary>差分（長い場合は途中まで）</summary>"
+            echo
+            echo '```diff'
+            echo "$DIFF"
+            echo '```'
+            echo "</details>"
+          } > body.md
+
+          if [ "$DRY_RUN" = "true" ]; then
+            cat body.md >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          gh label create "公式更新" --color FBCA04 --description "公式 Yowkees/keyball の更新" 2>/dev/null || true
+          gh label create "解説済み" --color 0E8A16 --description "Claude が解説を書いた" 2>/dev/null || true
+
+          OPEN=$(gh issue list --label "公式更新" --state open --json number,body \
+            --jq 'map(select(.body | contains("upstream-head:"))) | .[0] // empty')
+          if [ -z "$OPEN" ]; then
+            gh issue create --title "公式の更新あり（$(date -u +%F)）" --label "公式更新" --body-file body.md
+          elif echo "$OPEN" | grep -q "upstream-head: $HEAD"; then
+            echo "前回と同じ内容の Issue が開いたままなので何もしない" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            NUM=$(echo "$OPEN" | jq -r .number)
+            gh issue edit "$NUM" --body-file body.md --remove-label "解説済み"
+            gh issue comment "$NUM" --body "公式にさらに更新がありました（公式最新 \`${HEAD:0:7}\`）。本文を最新の内容に書き換えました。"
+          fi
