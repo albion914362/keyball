@@ -1,0 +1,3041 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keyball Config Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #181c27;
+  --surface2: #1e2333;
+  --border: #2a3047;
+  --border2: #3a4563;
+  --text: #e2e8f0;
+  --muted: #7a8499;
+  --accent: #4f9cf9;
+  --accent2: #7c3aed;
+  --green: #34d399;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans JP', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* Layout */
+.app { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  padding: 0 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+.logo-title {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: .04em;
+}
+.logo-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  font-family: var(--mono);
+}
+.nav-group-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: .75rem 1.25rem .3rem;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: .5rem 1.25rem;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all .15s;
+  user-select: none;
+}
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: rgba(79,156,249,.08);
+}
+.nav-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+}
+
+/* Main */
+.main { padding: 2rem 2.5rem; max-width: 860px; }
+.page { display: none; }
+.page.active { display: block; }
+
+.page-header { margin-bottom: 2rem; }
+.page-title {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+.page-desc { font-size: 12px; color: var(--muted); margin-top: 4px; font-family: var(--mono); }
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+}
+.card-header {
+  padding: .75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.card-file {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  background: rgba(79,156,249,.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.card-body { padding: 1.25rem; }
+
+/* Rows */
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 1.5rem;
+  padding: .65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.row:last-child { border-bottom: none; padding-bottom: 0; }
+.row:first-child { padding-top: 0; }
+.row-label { font-size: 13px; color: var(--text); }
+.row-hint { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+.row-ctrl { display: flex; align-items: center; gap: 10px; }
+
+/* Slider */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 140px; height: 3px;
+  background: var(--border2);
+  border-radius: 2px; outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,156,249,.2);
+  transition: box-shadow .15s;
+}
+input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 5px rgba(79,156,249,.3); }
+.val-badge {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(79,156,249,.1);
+  padding: 2px 10px;
+  border-radius: 4px;
+  min-width: 72px;
+  text-align: center;
+}
+
+/* 数値の直接入力（スライダーと連動） */
+.num-in {
+  width: 76px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  outline: none;
+  text-align: right;
+}
+.num-in:focus { border-color: var(--accent); }
+.num-in.bad { border-color: var(--red); }
+.num-in.small { width: 58px; }
+
+/* レイヤー別 LED */
+.ll-row { display: grid; grid-template-columns: 70px 1fr auto auto; gap: 10px; align-items: center; padding: .55rem 0; border-bottom: 1px solid var(--border); }
+.ll-row:last-child { border-bottom: none; }
+.ll-name { font-family: var(--mono); font-size: 12px; color: var(--text); }
+.ll-name small { display: block; color: var(--muted); font-size: 10px; }
+.ll-row select { width: 100%; }
+.ll-row input[type=color] { width: 36px; height: 26px; padding: 0; border: 1px solid var(--border2); border-radius: 6px; background: none; cursor: pointer; }
+.ll-row .dim { opacity: .35; pointer-events: none; }
+.ll-note { font-size: 11px; color: var(--muted); line-height: 1.7; margin-top: .75rem; }
+.ll-warn { font-size: 12px; color: var(--amber, #f0b429); background: rgba(240,180,41,.1); border-radius: 6px; padding: .5rem .75rem; margin-top: .75rem; display: none; line-height: 1.6; }
+@media (max-width: 640px) { .ll-row { grid-template-columns: 52px 1fr auto auto; gap: 6px; } }
+
+/* 想定容量バー */
+.size-bar { position: sticky; top: 0; z-index: 20; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1.25rem; font-size: 12px; }
+.size-bar summary { display: flex; align-items: center; gap: 10px; padding: .55rem .9rem; cursor: pointer; list-style: none; }
+.size-bar summary::-webkit-details-marker { display: none; }
+.size-label { color: var(--muted); white-space: nowrap; }
+.size-track { flex: 1; height: 6px; background: var(--border2); border-radius: 3px; overflow: hidden; min-width: 60px; }
+.size-fill { display: block; height: 100%; background: var(--green, #34d399); border-radius: 3px; }
+.size-num { font-family: var(--mono); white-space: nowrap; color: var(--text); }
+.size-bar.warn .size-fill { background: var(--amber); }
+.size-bar.warn .size-num { color: var(--amber); }
+.size-bar.over .size-fill { background: var(--red); }
+.size-bar.over .size-num { color: var(--red); }
+.size-detail { padding: 0 .9rem .75rem; color: var(--muted); line-height: 1.7; }
+.size-detail table { border-collapse: collapse; margin: .25rem 0 .5rem; }
+.size-detail td { padding: 1px 12px 1px 0; }
+.size-detail td:last-child { text-align: right; font-family: var(--mono); color: var(--text); }
+.size-detail .bad { color: var(--red); }
+@media (max-width: 640px) { .size-num small { display: none; } .size-bar summary { flex-wrap: wrap; row-gap: 6px; } .size-track { order: 3; flex-basis: 100%; } }
+
+/* Select */
+select {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+}
+select:focus { border-color: var(--accent); }
+
+/* Toggle */
+.toggle-wrap { display: flex; align-items: center; gap: 8px; }
+.toggle {
+  position: relative; width: 36px; height: 20px;
+  background: var(--border2); border-radius: 10px;
+  cursor: pointer; transition: background .2s;
+}
+.toggle.on { background: var(--accent); }
+.toggle::after {
+  content: ''; position: absolute;
+  top: 3px; left: 3px;
+  width: 14px; height: 14px;
+  background: #fff; border-radius: 50%;
+  transition: transform .2s;
+}
+.toggle.on::after { transform: translateX(16px); }
+.toggle-label { font-size: 12px; font-family: var(--mono); }
+.toggle-label.on { color: var(--green); }
+.toggle-label.off { color: var(--muted); }
+
+/* Keymap */
+.layer-tabs {
+  display: flex; gap: 4px; margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border); padding-bottom: .75rem;
+}
+.ltab {
+  font-family: var(--mono); font-size: 11px; padding: 4px 12px;
+  border: 1px solid var(--border2); border-radius: 4px;
+  background: transparent; color: var(--muted); cursor: pointer;
+  transition: all .15s;
+}
+.ltab:hover { color: var(--text); border-color: var(--muted); }
+.ltab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.keygrid {
+  display: grid;
+  grid-template-columns: repeat(14, 1fr);
+  gap: 3px;
+}
+.key {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 5px;
+  padding: 5px 2px;
+  font-family: var(--mono);
+  font-size: 9px;
+  text-align: center;
+  color: var(--muted);
+  cursor: pointer;
+  min-height: 36px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  transition: all .12s;
+  line-height: 1.2;
+  user-select: none;
+}
+.key:hover { border-color: var(--accent); color: var(--text); }
+.key.selected { background: rgba(79,156,249,.15); border-color: var(--accent); color: var(--accent); }
+.key.mo { border-color: #7c3aed44; color: #a78bfa; }
+.key.lt { border-color: #05966944; color: #34d399; }
+.key.empty { color: #3a4563; border-color: var(--border); cursor: default; }
+.key.empty:hover { border-color: var(--border); color: #3a4563; }
+.key-top { font-size: 8px; color: var(--muted); }
+
+.key-editor-panel {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-top: .75rem;
+  display: none;
+}
+.key-editor-panel.visible { display: block; }
+.key-editor-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.key-editor-panel label { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+input[type=text] {
+  background: var(--surface); border: 1px solid var(--border2);
+  color: var(--text); font-family: var(--mono); font-size: 12px;
+  padding: 5px 10px; border-radius: 5px; outline: none; width: 180px;
+}
+input[type=text]:focus { border-color: var(--accent); }
+.btn {
+  font-family: var(--mono); font-size: 12px; padding: 6px 14px;
+  border-radius: 5px; cursor: pointer; transition: all .15s; border: 1px solid;
+}
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { opacity: .85; }
+.btn-ghost { background: transparent; color: var(--muted); border-color: var(--border2); }
+.btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+/* Code output */
+.code-block {
+  background: #0a0d14;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: #8be0a4;
+  white-space: pre;
+  overflow-x: auto;
+  line-height: 1.7;
+}
+.code-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: .5rem;
+}
+.code-filename { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+.copy-btn, .dl-btn {
+  font-family: var(--mono); font-size: 11px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--muted); padding: 3px 10px; border-radius: 4px;
+  cursor: pointer; transition: all .15s;
+  text-decoration: none; display: inline-block;
+}
+.copy-btn:hover, .dl-btn:hover { color: var(--text); border-color: var(--muted); }
+.copy-btn.copied { color: var(--green); border-color: var(--green); }
+.dl-btn { color: var(--accent); border-color: rgba(79,156,249,.4); }
+.dl-btn:hover { background: rgba(79,156,249,.1); border-color: var(--accent); color: var(--accent); }
+.code-btn-group { display: flex; gap: 6px; align-items: center; }
+
+/* Rules toggles */
+.rules-grid { display: grid; gap: .5rem; }
+.rule-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .6rem 0; border-bottom: 1px solid var(--border);
+}
+.rule-row:last-child { border-bottom: none; }
+.rule-key { font-family: var(--mono); font-size: 12px; color: var(--text); }
+.rule-val { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* Key Picker */
+.key-picker-panel {
+  display: none;
+  margin-top: .75rem;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.key-picker-panel.visible { display: block; }
+.picker-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .6rem 1rem; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; gap: 8px;
+}
+.picker-info { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; }
+.picker-info-label { color: var(--muted); }
+.picker-info-cur { color: var(--amber); background: rgba(251,191,36,.1); padding: 1px 8px; border-radius: 4px; }
+.picker-arrow { color: var(--muted); }
+.picker-info-next { color: var(--green); background: rgba(52,211,153,.1); padding: 1px 8px; border-radius: 4px; min-width: 80px; }
+.picker-actions { display: flex; gap: 6px; }
+.picker-tabs {
+  display: flex; gap: 0; overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: none;
+}
+.picker-tabs::-webkit-scrollbar { display: none; }
+.ptab {
+  flex-shrink: 0; padding: 6px 14px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--muted); background: transparent;
+  border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; transition: all .12s; white-space: nowrap;
+}
+.ptab:hover { color: var(--text); background: rgba(255,255,255,.03); }
+.ptab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(79,156,249,.06); }
+.picker-search-wrap { padding: .5rem .75rem; border-bottom: 1px solid var(--border); }
+.picker-search {
+  width: 100%; background: var(--surface); border: 1px solid var(--border2);
+  color: var(--text); font-family: var(--sans); font-size: 12px;
+  padding: 5px 10px; border-radius: 5px; outline: none;
+}
+.picker-search:focus { border-color: var(--accent); }
+.picker-grid {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding: .75rem; max-height: 200px; overflow-y: auto;
+}
+.pkey {
+  font-family: var(--mono); font-size: 10px;
+  background: var(--surface); border: 1px solid var(--border2);
+  color: var(--text); padding: 5px 8px; border-radius: 5px;
+  cursor: pointer; transition: all .1s; white-space: nowrap;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+.pkey:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,156,249,.08); }
+.pkey.picked { border-color: var(--green); color: var(--green); background: rgba(52,211,153,.1); }
+.pkey-sub { font-size: 9px; color: var(--muted); }
+.picker-special {
+  border-top: 1px solid var(--border);
+  padding: .6rem .75rem;
+  background: var(--surface);
+}
+.picker-special-title { font-size: 10px; color: var(--muted); font-family: var(--mono); letter-spacing: .06em; text-transform: uppercase; margin-bottom: .4rem; }
+.picker-special-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.picker-special-label { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.picker-special-sel { padding: 3px 6px; font-size: 12px; font-family: var(--mono); width: 56px; }
+.picker-special-btn { padding: 3px 10px; font-size: 11px; }
+.picker-special-sep { width: 1px; height: 18px; background: var(--border2); margin: 0 6px; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* Import */
+.flash-fileinfo { margin-top: 10px; font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: pre-wrap; }
+.flash-fileinfo.ok { color: var(--green); }
+.flash-fileinfo.error { color: var(--red); }
+.flash-steps { margin-left: 1.3rem; font-size: 13px; line-height: 1.9; }
+.flash-steps code { font-family: var(--mono); background: var(--surface2); padding: 0 4px; border-radius: 3px; }
+.flash-opt { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.flash-progress { margin-top: 14px; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.flash-bar { height: 100%; width: 0; background: var(--accent); transition: width .1s; }
+.flash-alert { margin-top: 12px; padding: 10px 12px; border-radius: 6px; font-size: 13px; white-space: pre-wrap; border: 1px solid var(--border2); }
+.flash-alert--info { background: rgba(79,156,249,.08); border-color: rgba(79,156,249,.4); }
+.flash-alert--done { background: rgba(52,211,153,.1); border-color: rgba(52,211,153,.5); color: var(--green); }
+.flash-alert--error { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.5); color: var(--red); }
+.flash-alert--warn { background: rgba(251,191,36,.1); border-color: rgba(251,191,36,.5); color: var(--amber); margin-bottom: 1rem; }
+.flash-log { margin-top: 10px; max-height: 160px; overflow: auto; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.flash-log:empty { display: none; }
+.gh-input { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); border-radius: 6px; padding: 6px 10px; font-family: var(--mono); font-size: 12px; width: 280px; }
+.gh-input.gh-short { width: 134px; }
+.gh-help { margin-top: 12px; font-size: 13px; }
+.gh-help summary { cursor: pointer; color: var(--accent); }
+.gh-help .flash-steps { margin-top: 8px; }
+.flash-alert a { color: inherit; font-weight: bold; }
+.kt-opts { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; gap: 12px; flex-wrap: wrap; }
+.kt-board-wrap { overflow-x: auto; padding: 4px 0 8px; }
+.kt-board { position: relative; outline: none; margin: 0 auto; }
+.kt-key { position: absolute; border-radius: 7px; border: 1.5px solid var(--border2); background: var(--surface2); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; transition: background .25s, border-color .25s, transform .08s; }
+.kt-key .m { font-size: 14px; font-weight: 600; line-height: 1.1; white-space: nowrap; }
+.kt-key .m.s { font-size: 11px; }
+.kt-key .m.xs { font-size: 9px; }
+.kt-key .h { font-size: 8px; white-space: nowrap; margin-top: 2px; padding: 0 4px; border-radius: 3px; background: rgba(52,211,153,.18); color: var(--green); }
+.kt-key .c { position: absolute; bottom: 2px; left: 0; right: 0; font-size: 7px; color: var(--muted); font-family: var(--mono); overflow: hidden; white-space: nowrap; }
+.kt-key .h + .c { display: none; }
+.kt-key.trns { background: transparent; border-style: dashed; border-color: var(--border); }
+.kt-key.trns .m { color: var(--border2); }
+.kt-key.na { background: transparent; border-style: dotted; }
+.kt-key.na .m { color: var(--muted); }
+.kt-key.done { background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.6); }
+.kt-key.press { background: var(--accent); border-color: var(--accent); color: #fff; transform: scale(.94); transition: none; }
+.kt-key.press .c, .kt-key.press .h { color: #fff; }
+.kt-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 11px; color: var(--muted); margin-top: 6px; }
+.kt-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.kt-sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid var(--border2); background: var(--surface2); }
+.kt-sw-press { background: var(--accent); border-color: var(--accent); }
+.kt-sw-done { background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.6); }
+.kt-sw-na { background: transparent; border-style: dotted; }
+.kt-sw-trns { background: transparent; border-style: dashed; border-color: var(--border); }
+.kt-progress { margin-top: 10px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.kt-log { max-height: 220px; }
+.kt-note { margin-top: 10px; font-size: 12px; color: var(--muted); line-height: 1.8; }
+.import-section {
+  margin-top: auto;
+  padding: 1rem 1.25rem .75rem;
+  border-top: 1px solid var(--border);
+}
+.import-section-label {
+  font-size: 10px; font-weight: 500; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: .5rem;
+}
+.import-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: .5rem;
+  font-family: var(--mono); font-size: 12px;
+  color: var(--accent); background: rgba(79,156,249,.08);
+  border: 1px solid rgba(79,156,249,.3); border-radius: 6px;
+  cursor: pointer; transition: all .15s;
+}
+.import-btn:hover { background: rgba(79,156,249,.16); border-color: var(--accent); }
+
+/* Import Modal */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.7); backdrop-filter: blur(3px);
+  z-index: 100; align-items: center; justify-content: center;
+}
+.modal-overlay.visible { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 12px; width: 540px; max-width: calc(100vw - 2rem);
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0,0,0,.5);
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+}
+.modal-title { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--text); }
+.modal-close {
+  background: none; border: none; color: var(--muted);
+  font-size: 18px; cursor: pointer; line-height: 1;
+  padding: 2px 6px; border-radius: 4px;
+}
+.modal-close:hover { color: var(--text); background: var(--surface2); }
+.modal-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+.import-slot {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden;
+}
+.import-slot-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .6rem 1rem; border-bottom: 1px solid var(--border);
+}
+.import-slot-name { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+.import-slot-status {
+  font-family: var(--mono); font-size: 11px;
+  padding: 2px 8px; border-radius: 4px;
+}
+.import-slot-status.ok { color: var(--green); background: rgba(52,211,153,.1); }
+.import-slot-status.pending { color: var(--muted); background: var(--surface); }
+.import-slot-status.error { color: var(--red); background: rgba(248,113,113,.1); }
+.import-drop {
+  padding: 1rem; display: flex; flex-direction: column;
+  align-items: center; gap: .5rem; cursor: pointer;
+  border: 2px dashed transparent; transition: border-color .15s;
+}
+.import-drop:hover, .import-drop.dragover { border-color: var(--accent); background: rgba(79,156,249,.04); }
+.import-drop-icon { font-size: 22px; }
+.import-drop-label { font-size: 12px; color: var(--muted); text-align: center; }
+.import-drop input[type=file] { display: none; }
+.import-parsed {
+  padding: .6rem 1rem; background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+  display: none;
+}
+.import-parsed.visible { display: block; }
+.import-parsed-item { display: flex; gap: 8px; margin-bottom: 2px; }
+.import-parsed-key { color: var(--muted); min-width: 180px; }
+.import-parsed-val { color: var(--text); }
+.modal-footer {
+  padding: 1rem 1.25rem; border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; display: flex; flex-wrap: wrap; padding: .75rem; gap: .5rem; }
+  .sidebar-logo { border-bottom: none; padding-bottom: 0; width: 100%; }
+  .nav-group-label { display: none; }
+  .nav-item { border-radius: 6px; border-left: none; padding: .4rem .75rem; }
+  .nav-item.active { border-left: none; background: rgba(79,156,249,.15); }
+  .main { padding: 1.25rem; }
+  input[type=range] { width: 100px; flex: 1; }
+  .row { grid-template-columns: 1fr; gap: .5rem; }
+  .row-ctrl { justify-content: flex-end; }
+  .keygrid { grid-template-columns: repeat(7, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Sidebar -->
+<nav class="sidebar" style="display:flex;flex-direction:column;">
+  <div class="sidebar-logo">
+    <div class="logo-title">⬡ keyball.cfg</div>
+    <div class="logo-sub">keyball61 / QMK firmware</div>
+  </div>
+  <div class="nav-group-label">設定</div>
+  <div class="nav-item active" onclick="show('mouse', this)">
+    <span class="nav-dot"></span>トラックボール
+  </div>
+  <div class="nav-item" onclick="show('rgb', this)">
+    <span class="nav-dot"></span>RGB ライティング
+  </div>
+  <div class="nav-item" onclick="show('auto', this)">
+    <span class="nav-dot"></span>自動マウスレイヤー
+  </div>
+  <div class="nav-item" onclick="show('keymap', this)">
+    <span class="nav-dot"></span>キーマップ
+  </div>
+  <div class="nav-item" onclick="show('keytest', this)">
+    <span class="nav-dot"></span>キーテスト
+  </div>
+  <div class="nav-group-label">出力</div>
+  <div class="nav-item" onclick="show('output', this)">
+    <span class="nav-dot"></span>コード生成
+  </div>
+  <div class="nav-item" onclick="show('ghbuild', this)">
+    <span class="nav-dot"></span>GitHub でビルド
+  </div>
+  <div class="nav-item" onclick="show('flash', this)">
+    <span class="nav-dot"></span>書き込み (.hex)
+  </div>
+  <div style="flex:1"></div>
+  <div class="import-section">
+    <div class="import-section-label">ファイル読み込み</div>
+    <div class="import-btn" onclick="openImportModal()">
+      ↑ 設定ファイルを読み込む
+    </div>
+  </div>
+</nav>
+
+<!-- Main -->
+<main class="main">
+
+<!-- 想定容量（全ページ共通） -->
+<details class="size-bar" id="size-bar">
+  <summary>
+    <span class="size-label">想定容量</span>
+    <span class="size-track"><span class="size-fill" id="size-fill"></span></span>
+    <span class="size-num" id="size-num"></span>
+  </summary>
+  <div class="size-detail" id="size-detail"></div>
+</details>
+
+<!-- トラックボール -->
+<div id="page-mouse" class="page active">
+  <div class="page-header">
+    <div class="page-title">// trackball</div>
+    <div class="page-desc">光学センサー PMW3360DM の動作設定</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">センサー感度</span>
+      <span class="card-file">config.h</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div>
+          <div class="row-label">CPI (カーソル解像度)</div>
+          <div class="row-hint">KEYBALL_CPI_DEFAULT — 小さいと低速・精密、大きいと高速</div>
+        </div>
+        <div class="row-ctrl">
+          <input type="range" min="100" max="12000" step="100" value="700"
+            oninput="setVal('cpi-v', this.value+' CPI'); render()">
+          <span class="val-badge" id="cpi-v">700 CPI</span>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <div class="row-label">スクロール除数</div>
+          <div class="row-hint">KEYBALL_SCROLL_DIV_DEFAULT — D0=最速 / D7=最遅</div>
+        </div>
+        <div class="row-ctrl">
+          <input type="range" min="0" max="7" step="1" value="4"
+            oninput="setVal('scrl-v', 'D'+this.value+' (1/'+(1<<+this.value)+')'); render()">
+          <span class="val-badge" id="scrl-v">D4 (1/16)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">タップ遅延</span>
+      <span class="card-file">config.h</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div>
+          <div class="row-label">TAP_CODE_DELAY</div>
+          <div class="row-hint">タップ判定の遅延時間 (ms)。誤検知が多い場合は増やす</div>
+        </div>
+        <div class="row-ctrl">
+          <input type="range" min="0" max="50" step="1" value="5"
+            oninput="setVal('tap-v', this.value+' ms'); render()">
+          <span class="val-badge" id="tap-v">5 ms</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RGB -->
+<div id="page-rgb" class="page">
+  <div class="page-header">
+    <div class="page-title">// rgb_matrix</div>
+    <div class="page-desc">LED バックライトの設定 (74 LEDs)</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">デフォルトエフェクト</span>
+      <span class="card-file">config.h</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div>
+          <div class="row-label">デフォルトモード</div>
+          <div class="row-hint">RGB_MATRIX_DEFAULT_MODE — 起動時のエフェクト</div>
+        </div>
+        <select id="rgb-mode" onchange="render()"></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">輝度 / 色</span>
+      <span class="card-file">config.h</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div>
+          <div class="row-label">最大輝度</div>
+          <div class="row-hint">RGB_MATRIX_MAXIMUM_BRIGHTNESS (0–255)</div>
+        </div>
+        <div class="row-ctrl">
+          <input type="range" min="0" max="255" value="125" oninput="setVal('br-v',this.value);render()">
+          <span class="val-badge" id="br-v">125</span>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <div class="row-label">デフォルト色相 (HUE)</div>
+          <div class="row-hint">RGB_MATRIX_DEFAULT_HUE (0–255)</div>
+        </div>
+        <div class="row-ctrl">
+          <input type="range" min="0" max="255" value="125" oninput="setVal('hue-v',this.value);render()">
+          <span class="val-badge" id="hue-v">125</span>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <div class="row-label">デフォルト彩度 (SAT)</div>
+          <div class="row-hint">RGB_MATRIX_DEFAULT_SAT (0–255)</div>
+        </div>
+        <div class="row-ctrl">
+          <input type="range" min="0" max="255" value="255" oninput="setVal('sat-v',this.value);render()">
+          <span class="val-badge" id="sat-v">255</span>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <div class="row-label">デフォルト明度 (VAL)</div>
+          <div class="row-hint">RGB_MATRIX_DEFAULT_VAL (0–255)</div>
+        </div>
+        <div class="row-ctrl">
+          <input type="range" min="0" max="255" value="125" oninput="setVal('val-v',this.value);render()">
+          <span class="val-badge" id="val-v">125</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">レイヤーごとの LED</span>
+      <span class="card-file">keymap.c / config.h</span>
+    </div>
+    <div class="card-body">
+      <div id="ll-list"></div>
+      <div class="ll-warn" id="ll-warn"></div>
+      <div class="ll-note">
+        「通常」は上の基本設定（L3 の LED キーで変えた内容を含む）のまま光ります。<br>
+        複数のレイヤーが同時に有効なときは、番号の大きいレイヤーの設定が使われます。<br>
+        色はキーボード側で HSV（0–255）に変換して使われ、明るさは「最大輝度」が上限です。<br>
+        ⚠ の付いたエフェクトは書き込み容量を使うため、増やしすぎるとビルドが失敗します。
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">ヒートマップ詳細設定</span>
+      <span class="card-file">config.h</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div>
+          <div class="row-label">スプレッド範囲</div>
+          <div class="row-hint">TYPING_HEATMAP_SPREAD (0–64) — 熱が広がる範囲</div>
+        </div>
+        <div class="row-ctrl">
+          <input type="range" min="0" max="64" value="32" oninput="setVal('sp-v',this.value);render()">
+          <span class="val-badge" id="sp-v">32</span>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <div class="row-label">冷却速度</div>
+          <div class="row-hint">DECREASE_DELAY_MS (ms) — 小さいほど早く冷める</div>
+        </div>
+        <div class="row-ctrl">
+          <input type="range" min="5" max="200" step="1" value="25" oninput="setVal('cool-v',this.value+'ms');render()">
+          <span class="val-badge" id="cool-v">25ms</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 自動マウスレイヤー -->
+<div id="page-auto" class="page">
+  <div class="page-header">
+    <div class="page-title">// auto_mouse_layer</div>
+    <div class="page-desc">トラックボールを動かすと自動でレイヤーが切り替わる機能</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">レイヤー設定</span>
+      <span class="card-file">keymap.c</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div>
+          <div class="row-label">マウスレイヤー番号</div>
+          <div class="row-hint">click_layer — マウス入力時に有効化されるレイヤー</div>
+        </div>
+        <select id="click-layer" onchange="render()">
+          <option value="3">Layer 3</option>
+          <option value="4" selected>Layer 4</option>
+        </select>
+      </div>
+      <div class="row">
+        <div>
+          <div class="row-label">スクロールモードレイヤー</div>
+          <div class="row-hint">keyball_set_scroll_mode — 該当レイヤー保持中にスクロール</div>
+        </div>
+        <select id="scroll-layer" onchange="render()">
+          <option value="3" selected>Layer 3</option>
+          <option value="1">Layer 1</option>
+          <option value="both">Layer 1 + 3</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">タイマー設定</span>
+      <span class="card-file">keymap.c</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div>
+          <div class="row-label">非操作タイムアウト</div>
+          <div class="row-hint">to_reset_time — この時間静止するとレイヤー解除 (ms)</div>
+        </div>
+        <div class="row-ctrl">
+          <input type="range" min="100" max="5000" step="10" value="800"
+            oninput="setVal('rst-v',this.value+'ms');render()">
+          <span class="val-badge" id="rst-v">800ms</span>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <div class="row-label">クリック有効化しきい値</div>
+          <div class="row-hint">to_clickable_movement — 移動量がこれ以上でクリックモードに</div>
+        </div>
+        <div class="row-ctrl">
+          <input type="range" min="0" max="50" step="1" value="0"
+            oninput="setVal('thr-v',this.value);render()">
+          <span class="val-badge" id="thr-v">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- キーマップ -->
+<div id="page-keymap" class="page">
+  <div class="page-header">
+    <div class="page-title">// keymaps</div>
+    <div class="page-desc">キーをクリックして割り当てを変更 — 変更はコード生成に反映されます</div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-title">レイヤー選択</span><span class="card-file">keymap.c</span></div>
+    <div class="card-body" style="padding-top:.75rem; padding-bottom:.75rem;">
+      <div class="layer-tabs">
+        <button class="ltab active" onclick="switchLayer(0,this)">L0 デフォルト</button>
+        <button class="ltab" onclick="switchLayer(1,this)">L1 シフト</button>
+        <button class="ltab" onclick="switchLayer(2,this)">L2 数字/矢印</button>
+        <button class="ltab" onclick="switchLayer(3,this)">L3 設定</button>
+        <button class="ltab" onclick="switchLayer(4,this)">L4 マウス</button>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:.5rem;font-family:var(--mono);">
+        左半分(上) ＋ 右半分(下) の順で表示
+      </div>
+      <div id="keygrid" class="keygrid"></div>
+      <!-- キーピッカー -->
+      <div id="key-picker" class="key-picker-panel">
+        <div class="picker-header">
+          <div class="picker-info">
+            <span class="picker-info-label">変更対象:</span>
+            <span id="sel-cur" class="picker-info-cur">—</span>
+            <span class="picker-arrow">→</span>
+            <span id="picker-preview" class="picker-info-next">キーを選択</span>
+          </div>
+          <div class="picker-actions">
+            <button class="btn btn-primary" id="picker-apply" onclick="applyKey()" disabled>適用</button>
+            <button class="btn btn-ghost" onclick="closeEditor()">✕</button>
+          </div>
+        </div>
+        <!-- カテゴリタブ -->
+        <div class="picker-tabs" id="picker-tabs"></div>
+        <!-- 検索 -->
+        <div class="picker-search-wrap">
+          <input type="text" id="picker-search" class="picker-search" placeholder="🔍  キー名で検索 (例: ctrl, esc, f1…)" oninput="filterPicker(this.value)">
+        </div>
+        <!-- キー一覧 -->
+        <div class="picker-grid" id="picker-grid"></div>
+        <!-- 特殊入力（LT / MO） -->
+        <div class="picker-special">
+          <div class="picker-special-title">レイヤー操作キー</div>
+          <div class="picker-special-row">
+            <span class="picker-special-label">MO( </span>
+            <select id="mo-layer" class="picker-special-sel">
+              <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option>
+            </select>
+            <span class="picker-special-label"> )</span>
+            <button class="btn btn-ghost picker-special-btn" onclick="pickSpecial('MO')">選択</button>
+            <span class="picker-special-sep"></span>
+            <span class="picker-special-label">LT( </span>
+            <select id="lt-layer" class="picker-special-sel">
+              <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option>
+            </select>
+            <span class="picker-special-label">, </span>
+            <select id="lt-key" class="picker-special-sel" style="width:90px;">
+              <option value="KC_SPC">SPC</option><option value="KC_ENT">ENT</option>
+              <option value="KC_BSPC">BSPC</option><option value="KC_TAB">TAB</option>
+              <option value="KC_LNG1">LNG1</option><option value="KC_LNG2">LNG2</option>
+            </select>
+            <span class="picker-special-label"> )</span>
+            <button class="btn btn-ghost picker-special-btn" onclick="pickSpecial('LT')">選択</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:1rem;margin-top:.75rem;font-size:11px;font-family:var(--mono);color:var(--muted);">
+        <span style="color:#a78bfa">■ MO</span> モーメンタリー
+        <span style="color:#34d399">■ LT</span> ホールド=レイヤー/タップ=キー
+        <span style="color:#3a4563">■ ___</span> 透過
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- コード生成 -->
+<div id="page-output" class="page">
+  <div class="page-header">
+    <div class="page-title">// generate</div>
+    <div class="page-desc">現在の設定値からファームウェアファイルを生成します</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">rules.mk — 機能スイッチ</span><span class="card-file">rules.mk</span></div>
+    <div class="card-body">
+      <div class="rule-row">
+        <div><div class="rule-key">RGB_MATRIX_ENABLE</div><div class="rule-val">RGB マトリクス LED</div></div>
+        <div class="toggle-wrap">
+          <div class="toggle on" id="tog-rgb" onclick="toggleRule(this,'tog-rgb-lbl')"></div>
+          <span class="toggle-label on" id="tog-rgb-lbl">yes</span>
+        </div>
+      </div>
+      <div class="rule-row">
+        <div><div class="rule-key">OLED_ENABLE</div><div class="rule-val">OLED ディスプレイ</div></div>
+        <div class="toggle-wrap">
+          <div class="toggle on" id="tog-oled" onclick="toggleRule(this,'tog-oled-lbl')"></div>
+          <span class="toggle-label on" id="tog-oled-lbl">yes</span>
+        </div>
+      </div>
+      <div class="rule-row">
+        <div><div class="rule-key">VIA_ENABLE</div><div class="rule-val">VIA / Remap 連携</div></div>
+        <div class="toggle-wrap">
+          <div class="toggle on" id="tog-via" onclick="toggleRule(this,'tog-via-lbl')"></div>
+          <span class="toggle-label on" id="tog-via-lbl">yes</span>
+        </div>
+      </div>
+      <div class="rule-row">
+        <div><div class="rule-key">RGBLIGHT_ENABLE</div><div class="rule-val">アンダーグロー (旧 LED)</div></div>
+        <div class="toggle-wrap">
+          <div class="toggle" id="tog-rgl" onclick="toggleRule(this,'tog-rgl-lbl')"></div>
+          <span class="toggle-label off" id="tog-rgl-lbl">no</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="out-configh"></div>
+  <div id="out-keymapC"></div>
+  <div id="out-rulesmk"></div>
+</div>
+
+<!-- キーテスト -->
+<div id="page-keytest" class="page">
+  <div class="page-header">
+    <div class="page-title">// key test</div>
+    <div class="page-desc">キーボードを押すと、このツールのキーマップ上で押したキーが光ります（書き込み後の動作確認用）</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">表示中のレイヤー</span><span class="card-file" id="kt-status">待機中</span></div>
+    <div class="card-body">
+      <div class="layer-tabs" id="kt-tabs">
+        <button class="ltab active" onclick="ktSetLayer(0,true)">L0 デフォルト</button>
+        <button class="ltab" onclick="ktSetLayer(1,true)">L1 シフト</button>
+        <button class="ltab" onclick="ktSetLayer(2,true)">L2 数字/矢印</button>
+        <button class="ltab" onclick="ktSetLayer(3,true)">L3 設定</button>
+        <button class="ltab" onclick="ktSetLayer(4,true)">L4 マウス</button>
+      </div>
+      <div class="kt-opts">
+        <label class="flash-opt"><input type="checkbox" id="kt-auto" checked> 押されたキーからレイヤーを自動で判定して表示を切り替える</label>
+        <button class="btn btn-ghost" onclick="ktReset()">確認済みをリセット</button>
+      </div>
+      <div class="kt-board-wrap"><div class="kt-board" id="kt-board" tabindex="0"></div></div>
+      <div class="kt-legend">
+        <span><i class="kt-sw kt-sw-press"></i>押している</span>
+        <span><i class="kt-sw kt-sw-done"></i>確認済み</span>
+        <span><i class="kt-sw kt-sw-todo"></i>未確認</span>
+        <span><i class="kt-sw kt-sw-na"></i>PC に信号が出ないキー（レイヤー切替・LED・感度など）</span>
+        <span><i class="kt-sw kt-sw-trns"></i>▽ 下のレイヤーと同じ</span>
+      </div>
+      <div class="kt-progress" id="kt-progress"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">入力の記録</span><span class="card-file">最新が上</span></div>
+    <div class="card-body">
+      <pre class="flash-log kt-log" id="kt-log"></pre>
+      <p class="kt-note">・この画面を開いている間はキーの入力を横取りします（Tab や F キーもブラウザでは動きません）。ただし Win キーや Ctrl+Alt+Del など OS が先に使う組み合わせは止められません。<br>
+      ・ブラウザに届くのは「どの文字が入力されたか」だけで、キーボード内のレイヤーは見えません。表示のレイヤーは、届いたキーから推測しています（例: F1 が来たら L2、ボールを動かしたら L4）。違う場合はタブで手動で切り替えてください。<br>
+      ・かな／英数キーは OS や IME の設定によってはブラウザに届きません。</p>
+    </div>
+  </div>
+</div>
+
+<!-- GitHub でビルド -->
+<div id="page-ghbuild" class="page">
+  <div class="page-header">
+    <div class="page-title">// github build</div>
+    <div class="page-desc">今の設定の config.h / keymap.c / rules.mk をフォークに push し、GitHub Actions で .hex をビルドします</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">接続設定</span><span class="card-file">GitHub API</span></div>
+    <div class="card-body">
+      <div class="row">
+        <div><div class="row-label">リポジトリ</div><div class="row-hint">自分のフォーク（owner/name）</div></div>
+        <div class="row-ctrl"><input class="gh-input" id="gh-repo" value="albion914362/keyball"></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">ブランチ / キーマップ名</div><div class="row-hint">keymaps/&lt;キーマップ名&gt;/ に3ファイルを置きます</div></div>
+        <div class="row-ctrl"><input class="gh-input gh-short" id="gh-branch" value="main"><input class="gh-input gh-short" id="gh-keymap" value="albion"></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">アクセストークン</div><div class="row-hint">Fine-grained token（下の説明を参照）</div></div>
+        <div class="row-ctrl"><input class="gh-input" id="gh-token" type="password" placeholder="github_pat_..." autocomplete="off"></div>
+      </div>
+      <div class="row">
+        <div><div class="row-label">トークンを保存</div><div class="row-hint">このブラウザだけに保存（共用 PC では OFF）</div></div>
+        <div class="row-ctrl"><label class="flash-opt"><input type="checkbox" id="gh-remember"> 保存する</label></div>
+      </div>
+      <details class="gh-help">
+        <summary>アクセストークンの作り方（最初の1回だけ）</summary>
+        <ol class="flash-steps">
+          <li>GitHub 右上のアイコン → Settings → 一番下の Developer settings → Personal access tokens → <strong>Fine-grained tokens</strong> → Generate new token。</li>
+          <li>名前は「keyball61設定変更ツール」など。期限は好みで（切れたら作り直し）。</li>
+          <li>Repository access は <strong>Only select repositories</strong> で <code>keyball</code> だけを選ぶ。</li>
+          <li>Permissions の Repository permissions で <strong>Contents: Read and write</strong> と <strong>Actions: Read and write</strong> を設定。</li>
+          <li>Generate token で表示された <code>github_pat_...</code> を上の欄に貼る（画面を閉じると二度と表示されません）。</li>
+        </ol>
+      </details>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">push してビルド</span><span class="card-file">build-user.yml</span></div>
+    <div class="card-body">
+      <ol class="flash-steps">
+        <li>「push してビルド開始」を押すと、今の設定の3ファイルをフォークに上げてビルドを始めます（内容が同じなら push は省略）。</li>
+        <li>ビルドには数分かかります。終わるとこの下に Actions の画面へのリンクが出ます。</li>
+        <li>リンク先の下の方の <strong>Artifacts</strong> から <code>keyball61-&lt;キーマップ名&gt;-firmware</code> をダウンロードし、zip を展開します。</li>
+        <li>中の .hex を「書き込み (.hex)」画面にドラッグして書き込みます。</li>
+      </ol>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
+        <button class="btn btn-primary" id="gh-btn" onclick="ghPushAndBuild()">push してビルド開始</button>
+        <button class="btn btn-ghost" onclick="ghPreview()">push する内容を見る</button>
+      </div>
+      <div class="flash-alert" id="gh-msg" style="display:none"></div>
+      <pre class="flash-log" id="gh-log"></pre>
+    </div>
+  </div>
+</div>
+
+<!-- 書き込み -->
+<div id="page-flash" class="page">
+  <div class="page-header">
+    <div class="page-title">// flash</div>
+    <div class="page-desc">ビルドした .hex を Pro Micro (Caterina) にブラウザから書き込みます（QMK Toolbox の代わり）</div>
+  </div>
+
+  <div class="flash-alert flash-alert--warn" id="flash-unsupported" style="display:none">
+    このブラウザは Web Serial に対応していないため書き込めません。Chrome か Edge で開いてください。
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">1. ファームウェアを選ぶ</span><span class="card-file">.hex</span></div>
+    <div class="card-body">
+      <label class="import-drop" id="drop-hex"
+        ondragover="event.preventDefault();this.classList.add('dragover')"
+        ondragleave="this.classList.remove('dragover')"
+        ondrop="event.preventDefault();this.classList.remove('dragover');loadHexFile(event.dataTransfer.files[0])">
+        <span class="import-drop-icon">📦</span>
+        <span class="import-drop-label">クリックまたはドラッグ&ドロップ（GitHub Actions でビルドした keyball_keyball61_albion.hex など）</span>
+        <input type="file" accept=".hex" onchange="loadHexFile(this.files[0])">
+      </label>
+      <div class="flash-fileinfo" id="hex-info"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">2. 書き込む</span><span class="card-file">Web Serial / AVR109</span></div>
+    <div class="card-body">
+      <ol class="flash-steps">
+        <li>書き込みたい側（左 or 右）の USB ケーブルだけをパソコンにつなぎます。</li>
+        <li>下の「書き込む」を押すと、ポート選択の画面が開きます。</li>
+        <li><strong>画面が開いた状態で</strong>キーボードをブートローダーモードにします。L3 の <code>Boot</code> キー（かな長押し＋左下 or 右下）を押すか、基板のリセットボタンを押します（反応しない場合は素早く2回）。</li>
+        <li>一覧に「Arduino Leonardo」「SparkFun Pro Micro」「USB シリアル デバイス」などが出たら、<strong>約 8 秒以内に</strong>選んで「接続」を押します。</li>
+        <li>書き込みと確認（読み戻し）が終わると、キーボードが自動で再起動します。</li>
+        <li>もう片方の側も、ケーブルをつなぎ替えて同じ手順で書き込みます。</li>
+      </ol>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
+        <button class="btn btn-primary" id="flash-btn" onclick="startFlash()" disabled>書き込む</button>
+        <label class="flash-opt"><input type="checkbox" id="flash-verify" checked> 書き込み後に読み戻して確認する</label>
+      </div>
+      <div class="flash-progress"><div class="flash-bar" id="flash-bar"></div></div>
+      <div class="flash-alert" id="flash-msg" style="display:none"></div>
+      <pre class="flash-log" id="flash-log"></pre>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">// 設定ファイルを読み込む</div>
+      <button class="modal-close" onclick="closeImportModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- config.h -->
+      <div class="import-slot" id="slot-configh">
+        <div class="import-slot-header">
+          <span class="import-slot-name">config.h</span>
+          <span class="import-slot-status pending" id="status-configh">未読み込み</span>
+        </div>
+        <label class="import-drop" id="drop-configh"
+          ondragover="handleDragOver(event,'configh')"
+          ondragleave="handleDragLeave('configh')"
+          ondrop="handleDrop(event,'configh')">
+          <span class="import-drop-icon">📄</span>
+          <span class="import-drop-label">クリックまたはドラッグ&ドロップ</span>
+          <input type="file" accept=".h,.c,.mk,text/*" onchange="handleFile(event,'configh')">
+        </label>
+        <div class="import-parsed" id="parsed-configh"></div>
+      </div>
+
+      <!-- keymap.c -->
+      <div class="import-slot" id="slot-keymapc">
+        <div class="import-slot-header">
+          <span class="import-slot-name">keymap.c</span>
+          <span class="import-slot-status pending" id="status-keymapc">未読み込み</span>
+        </div>
+        <label class="import-drop" id="drop-keymapc"
+          ondragover="handleDragOver(event,'keymapc')"
+          ondragleave="handleDragLeave('keymapc')"
+          ondrop="handleDrop(event,'keymapc')">
+          <span class="import-drop-icon">📄</span>
+          <span class="import-drop-label">クリックまたはドラッグ&ドロップ</span>
+          <input type="file" accept=".h,.c,.mk,text/*" onchange="handleFile(event,'keymapc')">
+        </label>
+        <div class="import-parsed" id="parsed-keymapc"></div>
+      </div>
+
+      <!-- rules.mk -->
+      <div class="import-slot" id="slot-rulesmk">
+        <div class="import-slot-header">
+          <span class="import-slot-name">rules.mk</span>
+          <span class="import-slot-status pending" id="status-rulesmk">未読み込み</span>
+        </div>
+        <label class="import-drop" id="drop-rulesmk"
+          ondragover="handleDragOver(event,'rulesmk')"
+          ondragleave="handleDragLeave('rulesmk')"
+          ondrop="handleDrop(event,'rulesmk')">
+          <span class="import-drop-icon">📄</span>
+          <span class="import-drop-label">クリックまたはドラッグ&ドロップ</span>
+          <input type="file" accept=".h,.c,.mk,text/*" onchange="handleFile(event,'rulesmk')">
+        </label>
+        <div class="import-parsed" id="parsed-rulesmk"></div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeImportModal()">キャンセル</button>
+      <button class="btn btn-primary" id="import-apply-btn" onclick="applyImport()" disabled>反映する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- Nav ----
+function show(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  el.classList.add('active');
+  if (page === 'output') render();
+  if (page === 'keytest') ktRender();
+}
+function setVal(id, v) { document.getElementById(id).textContent = v; }
+
+// ---- Toggle ----
+function toggleRule(el, lblId) {
+  el.classList.toggle('on');
+  const on = el.classList.contains('on');
+  const lbl = document.getElementById(lblId);
+  lbl.textContent = on ? 'yes' : 'no';
+  lbl.className = 'toggle-label ' + (on ? 'on' : 'off');
+  render();
+}
+function ruleVal(id) { return document.getElementById(id).classList.contains('on') ? 'yes' : 'no'; }
+
+// ---- Helpers ----
+function getSlider(id) { return document.querySelector(`input[oninput*="${id}"]`)?.value || 0; }
+function getSliderId(id) {
+  const el = document.getElementById(id);
+  return el ? el.previousElementSibling?.value : null;
+}
+
+// ---- Keymap data ----
+const layers = [
+  // Layer 0
+  [
+    'KC_ESC','KC_1','KC_2','KC_3','KC_4','KC_5','KC_6','KC_7','KC_8','KC_9','KC_0','KC_MINS','','',
+    'KC_DEL','KC_Q','KC_W','KC_E','KC_R','KC_T','KC_Y','KC_U','KC_I','KC_O','KC_P','KC_INT3','','',
+    'KC_TAB','KC_A','KC_S','KC_D','KC_F','KC_G','KC_H','KC_J','KC_K','KC_L','KC_SCLN','S(KC_7)','','',
+    'MO(1)','KC_Z','KC_X','KC_C','KC_V','KC_B','KC_RBRC','KC_NUHS','KC_N','KC_M','KC_COMM','KC_DOT','KC_SLSH','KC_RSFT',
+    '_______','KC_LCTL','KC_LALT','KC_LGUI','LT(1,KC_LNG2)','LT(2,KC_SPC)','LT(3,KC_LNG1)','KC_BSPC','LT(2,KC_ENT)','LT(1,KC_LNG2)','KC_RGUI','_______','KC_RALT','KC_PSCR'
+  ],
+  // Layer 1
+  [
+    'S(KC_ESC)','S(KC_1)','KC_LBRC','S(KC_3)','S(KC_4)','S(KC_5)','KC_EQL','S(KC_6)','S(KC_QUOT)','S(KC_8)','S(KC_9)','S(KC_INT1)','','',
+    'S(KC_DEL)','S(KC_Q)','S(KC_W)','S(KC_E)','S(KC_R)','S(KC_T)','S(KC_Y)','S(KC_U)','S(KC_I)','S(KC_O)','S(KC_P)','S(KC_INT3)','','',
+    'S(KC_TAB)','S(KC_A)','S(KC_S)','S(KC_D)','S(KC_F)','S(KC_G)','S(KC_H)','S(KC_J)','S(KC_K)','S(KC_L)','KC_QUOT','S(KC_2)','','',
+    '_______','S(KC_Z)','S(KC_X)','S(KC_C)','S(KC_V)','S(KC_B)','S(KC_RBRC)','S(KC_NUHS)','S(KC_N)','S(KC_M)','S(KC_COMM)','S(KC_DOT)','S(KC_SLSH)','S(KC_RSFT)',
+    '_______','S(KC_LCTL)','S(KC_LALT)','S(KC_LGUI)','_______','_______','_______','_______','_______','_______','S(KC_RGUI)','_______','S(KC_RALT)','_______'
+  ],
+  // Layer 2
+  [
+    '_______','KC_F1','KC_F2','KC_F3','KC_F4','KC_F5','KC_F6','KC_F7','KC_F8','KC_F9','KC_F10','KC_F11','','',
+    '_______','_______','KC_7','KC_8','KC_9','_______','_______','KC_LEFT','KC_UP','KC_RGHT','_______','KC_F12','','',
+    '_______','_______','KC_4','KC_5','KC_6','S(KC_SCLN)','KC_PGUP','KC_BTN1','KC_DOWN','KC_BTN2','KC_BTN3','_______','','',
+    '_______','_______','KC_1','KC_2','KC_3','S(KC_MINS)','S(KC_8)','S(KC_9)','KC_PGDN','_______','_______','_______','_______','_______',
+    '_______','_______','KC_0','KC_DOT','_______','_______','_______','KC_DEL','_______','_______','_______','_______','_______','_______'
+  ],
+  // Layer 3
+  [
+    'RGB_TOG','_______','_______','_______','_______','_______','RGB_M_P','RGB_M_B','RGB_M_R','RGB_M_SW','RGB_M_SN','RGB_M_K','','',
+    'RGB_MOD','RGB_HUI','RGB_SAI','RGB_VAI','_______','_______','RGB_M_X','RGB_M_G','RGB_M_T','RGB_M_TW','_______','_______','','',
+    'RGB_RMOD','RGB_HUD','RGB_SAD','RGB_VAD','_______','_______','CPI_D1K','CPI_D100','CPI_I100','CPI_I1K','KBC_SAVE','KBC_RST','','',
+    '_______','_______','SCRL_DVD','SCRL_DVI','SCRL_MO','SCRL_TO','QK_CLEAR_EEPROM','QK_CLEAR_EEPROM','KC_HOME','KC_PGDN','KC_PGUP','KC_END','_______','_______',
+    'QK_BOOT','_______','KC_LEFT','KC_DOWN','KC_UP','KC_RGHT','_______','_______','KC_BSPC','_______','_______','_______','_______','QK_BOOT'
+  ],
+  // Layer 4
+  [
+    '_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','','',
+    '_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','','',
+    '_______','_______','_______','_______','_______','_______','_______','KC_MY_BTN1','_______','KC_MY_BTN2','_______','_______','','',
+    '_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','_______',
+    '_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','_______','_______'
+  ]
+];
+
+let currentLayer = 0;
+let selectedKeyIdx = null;
+
+function classOf(k) {
+  if (!k || k === '') return 'empty';
+  if (k === '_______') return 'empty';
+  if (k.startsWith('MO(')) return 'mo';
+  if (k.startsWith('LT(')) return 'lt';
+  return '';
+}
+function labelOf(k) {
+  if (!k || k === '') return '';
+  if (k === '_______') return '___';
+  if (k.length > 10) return k.slice(0, 9) + '…';
+  return k;
+}
+
+function buildGrid() {
+  const grid = document.getElementById('keygrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const data = layers[currentLayer];
+  data.forEach((k, i) => {
+    const d = document.createElement('div');
+    d.className = 'key ' + classOf(k) + (i === selectedKeyIdx ? ' selected' : '');
+    d.textContent = labelOf(k);
+    d.onclick = () => selectKey(i, k);
+    grid.appendChild(d);
+  });
+}
+// ---- Key Picker data ----
+const PICKER_CATS = [
+  { id: 'basic', label: '基本', keys: [
+    {c:'KC_A',l:'A'},{c:'KC_B',l:'B'},{c:'KC_C',l:'C'},{c:'KC_D',l:'D'},{c:'KC_E',l:'E'},
+    {c:'KC_F',l:'F'},{c:'KC_G',l:'G'},{c:'KC_H',l:'H'},{c:'KC_I',l:'I'},{c:'KC_J',l:'J'},
+    {c:'KC_K',l:'K'},{c:'KC_L',l:'L'},{c:'KC_M',l:'M'},{c:'KC_N',l:'N'},{c:'KC_O',l:'O'},
+    {c:'KC_P',l:'P'},{c:'KC_Q',l:'Q'},{c:'KC_R',l:'R'},{c:'KC_S',l:'S'},{c:'KC_T',l:'T'},
+    {c:'KC_U',l:'U'},{c:'KC_V',l:'V'},{c:'KC_W',l:'W'},{c:'KC_X',l:'X'},{c:'KC_Y',l:'Y'},
+    {c:'KC_Z',l:'Z'},
+    {c:'KC_1',l:'1'},{c:'KC_2',l:'2'},{c:'KC_3',l:'3'},{c:'KC_4',l:'4'},{c:'KC_5',l:'5'},
+    {c:'KC_6',l:'6'},{c:'KC_7',l:'7'},{c:'KC_8',l:'8'},{c:'KC_9',l:'9'},{c:'KC_0',l:'0'},
+  ]},
+  { id: 'mod', label: '修飾キー', keys: [
+    {c:'KC_LSFT',l:'L-Shift'},{c:'KC_RSFT',l:'R-Shift'},
+    {c:'KC_LCTL',l:'L-Ctrl'},{c:'KC_RCTL',l:'R-Ctrl'},
+    {c:'KC_LALT',l:'L-Alt'},{c:'KC_RALT',l:'R-Alt'},
+    {c:'KC_LGUI',l:'L-GUI'},{c:'KC_RGUI',l:'R-GUI'},
+    {c:'KC_CAPS',l:'CapsLk'},
+  ]},
+  { id: 'fn', label: 'F1-F12', keys: [
+    {c:'KC_F1',l:'F1'},{c:'KC_F2',l:'F2'},{c:'KC_F3',l:'F3'},{c:'KC_F4',l:'F4'},
+    {c:'KC_F5',l:'F5'},{c:'KC_F6',l:'F6'},{c:'KC_F7',l:'F7'},{c:'KC_F8',l:'F8'},
+    {c:'KC_F9',l:'F9'},{c:'KC_F10',l:'F10'},{c:'KC_F11',l:'F11'},{c:'KC_F12',l:'F12'},
+  ]},
+  { id: 'nav', label: '矢印・ナビ', keys: [
+    {c:'KC_UP',l:'↑'},{c:'KC_DOWN',l:'↓'},{c:'KC_LEFT',l:'←'},{c:'KC_RGHT',l:'→'},
+    {c:'KC_HOME',l:'Home'},{c:'KC_END',l:'End'},
+    {c:'KC_PGUP',l:'PgUp'},{c:'KC_PGDN',l:'PgDn'},
+    {c:'KC_INS',l:'Ins'},{c:'KC_DEL',l:'Del'},
+  ]},
+  { id: 'edit', label: '編集', keys: [
+    {c:'KC_ESC',l:'Esc'},{c:'KC_TAB',l:'Tab'},{c:'KC_SPC',l:'Space'},
+    {c:'KC_ENT',l:'Enter'},{c:'KC_BSPC',l:'BkSp'},
+    {c:'KC_PSCR',l:'PrtSc'},{c:'KC_SCRL',l:'ScrLk'},{c:'KC_PAUS',l:'Pause'},
+    {c:'KC_MINS',l:'-'},{c:'KC_EQL',l:'='},{c:'KC_LBRC',l:'['},{c:'KC_RBRC',l:']'},
+    {c:'KC_BSLS',l:'\\'},{c:'KC_SCLN',l:';'},{c:'KC_QUOT',l:"'"},{c:'KC_GRV',l:'`'},
+    {c:'KC_COMM',l:','},{c:'KC_DOT',l:'.'},{c:'KC_SLSH',l:'/'},
+    {c:'KC_INT1',l:'_（JP）'},{c:'KC_INT3',l:'¥（JP）'},
+    {c:'KC_LNG1',l:'かな'},{c:'KC_LNG2',l:'英数'},
+    {c:'KC_NUHS',l:'#（JP）'},
+  ]},
+  { id: 'mouse', label: 'マウス', keys: [
+    {c:'KC_BTN1',l:'左click'},{c:'KC_BTN2',l:'右click'},{c:'KC_BTN3',l:'中click'},
+    {c:'KC_MY_BTN1',l:'自動\nBtn1',s:'自動マウス'},{c:'KC_MY_BTN2',l:'自動\nBtn2',s:'自動マウス'},
+    {c:'KC_WH_U',l:'↑scroll'},{c:'KC_WH_D',l:'↓scroll'},
+    {c:'KC_WH_L',l:'←scroll'},{c:'KC_WH_R',l:'→scroll'},
+    {c:'SCRL_MO',l:'Scroll\nMO',s:'Keyball'},{c:'SCRL_TO',l:'Scroll\nTO',s:'Keyball'},
+    {c:'SCRL_DVI',l:'Scrl+',s:'Keyball'},{c:'SCRL_DVD',l:'Scrl-',s:'Keyball'},
+  ]},
+  { id: 'keyball', label: 'Keyball', keys: [
+    {c:'CPI_I100',l:'CPI+100',s:'CPI'},{c:'CPI_D100',l:'CPI-100',s:'CPI'},
+    {c:'CPI_I1K', l:'CPI+1K', s:'CPI'},{c:'CPI_D1K', l:'CPI-1K', s:'CPI'},
+    {c:'KBC_SAVE',l:'設定保存',s:'EEPROM'},{c:'KBC_RST',l:'設定\nリセット',s:'EEPROM'},
+    {c:'QK_BOOT', l:'Boot\nloader',s:'QMK'},{c:'QK_CLEAR_EEPROM',l:'EEPROM\nクリア',s:'QMK'},
+  ]},
+  { id: 'rgb', label: 'RGB', keys: [
+    {c:'RGB_TOG',l:'RGB\nON/OFF'},{c:'RGB_MOD',l:'Mode+'},{c:'RGB_RMOD',l:'Mode-'},
+    {c:'RGB_HUI',l:'Hue+'},{c:'RGB_HUD',l:'Hue-'},
+    {c:'RGB_SAI',l:'Sat+'},{c:'RGB_SAD',l:'Sat-'},
+    {c:'RGB_VAI',l:'Val+'},{c:'RGB_VAD',l:'Val-'},
+    {c:'RGB_M_P',l:'常時点灯'},{c:'RGB_M_B',l:'Breathe'},
+    {c:'RGB_M_R',l:'Rainbow'},{c:'RGB_M_SW',l:'Swirl'},
+    {c:'RGB_M_SN',l:'Snake'},{c:'RGB_M_K',l:'Knight'},
+    {c:'RGB_M_X',l:'X-Mas'},{c:'RGB_M_G',l:'Gradient'},
+    {c:'RGB_M_T',l:'Heatmap'},{c:'RGB_M_TW',l:'TW-Twist'},
+  ]},
+  { id: 'special', label: 'その他', keys: [
+    {c:'_______',l:'透過\n（下レイヤー）',s:'Pass-thru'},
+    {c:'XXXXXXX',l:'無効\n（何もしない）',s:'No-op'},
+  ]},
+];
+
+let pickerCat = 'basic';
+let pickerPending = null;  // 選択中のキーコード（未確定）
+
+function initPicker() {
+  const tabs = document.getElementById('picker-tabs');
+  tabs.innerHTML = PICKER_CATS.map(cat =>
+    `<button class="ptab${cat.id === pickerCat ? ' active' : ''}" onclick="switchPickerCat('${cat.id}',this)">${cat.label}</button>`
+  ).join('');
+  renderPickerGrid();
+}
+
+function switchPickerCat(id, el) {
+  pickerCat = id;
+  document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('picker-search').value = '';
+  renderPickerGrid();
+}
+
+function renderPickerGrid(filter) {
+  const cat = PICKER_CATS.find(c => c.id === pickerCat) || PICKER_CATS[0];
+  let keys = cat.keys;
+  if (filter) {
+    const f = filter.toLowerCase();
+    keys = PICKER_CATS.flatMap(c => c.keys).filter(k =>
+      k.c.toLowerCase().includes(f) || k.l.toLowerCase().includes(f)
+    );
+  }
+  const grid = document.getElementById('picker-grid');
+  grid.innerHTML = keys.map(k => {
+    const isPicked = pickerPending === k.c;
+    const label = k.l.replace(/\n/g, '<br>');
+    const sub = k.s ? `<span class="pkey-sub">${k.s}</span>` : '';
+    return `<div class="pkey${isPicked ? ' picked' : ''}" onclick="pendKey('${k.c}',this)">${label}${sub}</div>`;
+  }).join('');
+}
+
+function filterPicker(val) {
+  if (val) {
+    // search mode: flatten all cats
+    const f = val.toLowerCase();
+    const keys = PICKER_CATS.flatMap(c => c.keys).filter(k =>
+      k.c.toLowerCase().includes(f) || k.l.toLowerCase().includes(f)
+    );
+    const grid = document.getElementById('picker-grid');
+    grid.innerHTML = keys.map(k => {
+      const isPicked = pickerPending === k.c;
+      const label = k.l.replace(/\n/g, '<br>');
+      const sub = k.s ? `<span class="pkey-sub">${k.s}</span>` : '';
+      return `<div class="pkey${isPicked ? ' picked' : ''}" onclick="pendKey('${k.c}',this)">${label}${sub}</div>`;
+    }).join('');
+  } else {
+    renderPickerGrid();
+  }
+}
+
+function pendKey(code, el) {
+  pickerPending = code;
+  document.querySelectorAll('.pkey').forEach(k => k.classList.remove('picked'));
+  el.classList.add('picked');
+  document.getElementById('picker-preview').textContent = code;
+  document.getElementById('picker-apply').disabled = false;
+}
+
+function pickSpecial(type) {
+  let code;
+  if (type === 'MO') {
+    const n = document.getElementById('mo-layer').value;
+    code = `MO(${n})`;
+  } else {
+    const n = document.getElementById('lt-layer').value;
+    const k = document.getElementById('lt-key').value;
+    code = `LT(${n},${k})`;
+  }
+  pickerPending = code;
+  document.getElementById('picker-preview').textContent = code;
+  document.getElementById('picker-apply').disabled = false;
+  document.querySelectorAll('.pkey').forEach(k => k.classList.remove('picked'));
+}
+
+function selectKey(i, k) {
+  selectedKeyIdx = i;
+  document.getElementById('sel-cur').textContent = k || '(空)';
+  document.getElementById('picker-preview').textContent = 'キーを選択';
+  document.getElementById('picker-apply').disabled = true;
+  pickerPending = null;
+  document.getElementById('key-picker').classList.add('visible');
+  buildGrid();
+}
+function applyKey() {
+  if (pickerPending === null || selectedKeyIdx === null) return;
+  layers[currentLayer][selectedKeyIdx] = pickerPending;
+  closeEditor();
+}
+function closeEditor() {
+  selectedKeyIdx = null;
+  pickerPending = null;
+  document.getElementById('key-picker').classList.remove('visible');
+  buildGrid();
+}
+function switchLayer(n, el) {
+  currentLayer = n;
+  selectedKeyIdx = null;
+  document.getElementById('key-picker').classList.remove('visible');
+  document.querySelectorAll('.ltab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  buildGrid();
+}
+
+// ---- Code generation ----
+function getV(sliderQuery, fallback) {
+  const el = document.querySelector(sliderQuery);
+  return el ? el.value : fallback;
+}
+function getS(id, fallback) {
+  const el = document.getElementById(id);
+  return el ? el.value : fallback;
+}
+
+function genConfigH() {
+  const cpi  = getV('input[oninput*="cpi-v"]', 700);
+  const scrl = getV('input[oninput*="scrl-v"]', 4);
+  const tap  = getV('input[oninput*="tap-v"]', 5);
+  const br   = getV('input[oninput*="br-v"]', 125);
+  const hue  = getV('input[oninput*="hue-v"]', 125);
+  const sat  = getV('input[oninput*="sat-v"]', 255);
+  const val  = getV('input[oninput*="val-v"]', 125);
+  const mode = getS('rgb-mode', 'RGB_MATRIX_TYPING_HEATMAP');
+  const sp   = getV('input[oninput*="sp-v"]', 32);
+  const cool = getV('input[oninput*="cool-v"]', 25);
+
+  return `/*
+ * config.h — Keyball61
+ * Generated by keyball.cfg editor
+ */
+#pragma once
+
+#define TAP_CODE_DELAY ${tap}
+#define DYNAMIC_KEYMAP_LAYER_COUNT 5
+
+#define KEYBALL_CPI_DEFAULT ${cpi}
+#define KEYBALL_SCROLL_DIV_DEFAULT ${scrl}
+
+// RGB Matrix
+#define RGB_MATRIX_LED_COUNT 74
+#define RGB_MATRIX_MAXIMUM_BRIGHTNESS ${br}
+#define RGB_MATRIX_DEFAULT_HUE ${hue}
+#define RGB_MATRIX_DEFAULT_SAT ${sat}
+#define RGB_MATRIX_DEFAULT_VAL ${val}
+#define RGB_MATRIX_FRAMEBUFFER_EFFECTS
+#define ENABLE_RGB_MATRIX_TYPING_HEATMAP
+#define RGB_MATRIX_TYPING_HEATMAP_SPREAD ${sp}
+#define RGB_MATRIX_TYPING_HEATMAP_AREA_LIMIT 16
+#define RGB_MATRIX_TYPING_HEATMAP_DECREASE_DELAY_MS ${cool}
+#define RGB_MATRIX_KEYPRESSES
+#define ENABLE_RGB_MATRIX_SOLID_REACTIVE_MULTIWIDE${llExtraEffects().map(e => `\n#define ENABLE_RGB_MATRIX_${e}`).join('')}
+#define RGB_MATRIX_DEFAULT_MODE ${mode}`;
+}
+
+function genRulesMk() {
+  return `RGBLIGHT_ENABLE = ${ruleVal('tog-rgl')}
+RGB_MATRIX_ENABLE = ${ruleVal('tog-rgb')}
+OLED_ENABLE = ${ruleVal('tog-oled')}
+VIA_ENABLE = ${ruleVal('tog-via')}`;
+}
+
+function renderCodeBlock(containerId, filename, code) {
+  const c = document.getElementById(containerId);
+  if (!c) return;
+  c.innerHTML = `
+    <div class="code-header" style="margin-top:1.25rem;">
+      <span class="code-filename">${filename}</span>
+      <div class="code-btn-group">
+        <button class="copy-btn" onclick="copyCode(this, '${containerId}-pre')">コピー</button>
+        <a class="dl-btn" onclick="downloadFile('${containerId}-pre', '${filename}')">↓ ダウンロード</a>
+      </div>
+    </div>
+    <pre class="code-block" id="${containerId}-pre">${escHtml(code)}</pre>`;
+}
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function copyCode(btn, preId) {
+  const text = document.getElementById(preId).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ コピー済み';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+function downloadFile(preId, filename) {
+  const text = document.getElementById(preId).textContent;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---- keymap.c generator ----
+function fmtRow(keys, start, end) {
+  return '    ' + keys.slice(start, end).map(k => (k || '_______').padEnd(12)).join(', ');
+}
+function genKeymapC() {
+  const resetTime  = getV('input[oninput*="rst-v"]', 800);
+  const clickThr   = getV('input[oninput*="thr-v"]', 0);
+  const clickLyr   = getS('click-layer', '4');
+  const scrollLyr  = getS('scroll-layer', '3');
+
+  const scrollCond = scrollLyr === 'both'
+    ? 'get_highest_layer(state) == 1 || get_highest_layer(state) == 3'
+    : `get_highest_layer(state) == ${scrollLyr}`;
+
+  function layerBlock(n) {
+    const k = layers[n];
+    // 出力は 12,12,12,14,14 キー。内部データは 14 列 x 5 行で、0-2 行目の 12-13 列目は空き
+    const rows = [];
+    for (let r = 0; r < 5; r++) {
+      const s = r * 14, e = s + 14;
+      const slice = k.slice(s, e).map(v => v || '_______');
+      const trimmed = (r < 3) ? slice.slice(0, 12) : slice;
+      rows.push('    ' + trimmed.map(v => v.padEnd(12)).join(', '));
+    }
+    return rows.join(',\n');
+  }
+
+  return `/*
+Copyright 2022 @Yowkees
+Copyright 2022 MURAOKA Taro (aka KoRoN, @kaoriya)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or
+(at your option) any later version.
+*/
+
+#include QMK_KEYBOARD_H
+#include "quantum.h"
+
+enum custom_keycodes
+{
+  KC_MY_BTN1 = KEYBALL_SAFE_RANGE,
+  KC_MY_BTN2,
+  KC_MY_BTN3
+};
+
+enum click_state
+{
+  NONE = 0,
+  WAITING,
+  CLICKABLE,
+  CLICKING,
+};
+
+enum click_state state;
+uint16_t click_timer;
+
+uint16_t to_reset_time = ${resetTime};
+const int16_t to_clickable_movement = ${clickThr};
+const uint16_t click_layer = ${clickLyr};
+
+int16_t mouse_movement;
+
+void enable_click_layer(void)  { layer_on(click_layer);  click_timer = timer_read(); state = CLICKABLE; }
+void disable_click_layer(void) { state = NONE; layer_off(click_layer); }
+int16_t my_abs(int16_t num)    { return num < 0 ? -num : num; }
+bool is_clickable_mode(void)   { return state == CLICKABLE || state == CLICKING; }
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record)
+{
+  switch (keycode) {
+  case KC_MY_BTN1: case KC_MY_BTN2: case KC_MY_BTN3: {
+    report_mouse_t currentReport = pointing_device_get_report();
+    uint8_t btn = 1 << (keycode - KC_MY_BTN1);
+    if (record->event.pressed) { currentReport.buttons |= btn;  state = CLICKING; }
+    else                       { currentReport.buttons &= ~btn; enable_click_layer(); }
+    pointing_device_set_report(currentReport);
+    pointing_device_send();
+    return false;
+  }
+  default:
+    if (record->event.pressed) disable_click_layer();
+  }
+  return true;
+}
+
+report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
+{
+  int16_t current_x = mouse_report.x;
+  int16_t current_y = mouse_report.y;
+  if (current_x != 0 || current_y != 0) {
+    switch (state) {
+    case CLICKABLE: click_timer = timer_read(); break;
+    case CLICKING:  break;
+    case WAITING:
+      mouse_movement += my_abs(current_x) + my_abs(current_y);
+      if (mouse_movement >= to_clickable_movement) { mouse_movement = 0; enable_click_layer(); }
+      break;
+    default: click_timer = timer_read(); state = WAITING; mouse_movement = 0;
+    }
+  } else {
+    switch (state) {
+    case CLICKING: break;
+    case CLICKABLE:
+      if (timer_elapsed(click_timer) > to_reset_time) disable_click_layer();
+      break;
+    case WAITING:
+      if (timer_elapsed(click_timer) > 50) { mouse_movement = 0; state = NONE; }
+      break;
+    default: mouse_movement = 0; state = NONE;
+    }
+  }
+  mouse_report.x = current_x;
+  mouse_report.y = current_y;
+  return mouse_report;
+}
+
+// clang-format off
+const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
+  [0] = LAYOUT_universal(
+${layerBlock(0)}
+  ),
+  [1] = LAYOUT_universal(
+${layerBlock(1)}
+  ),
+  [2] = LAYOUT_universal(
+${layerBlock(2)}
+  ),
+  [3] = LAYOUT_universal(
+${layerBlock(3)}
+  ),
+  [4] = LAYOUT_universal(
+${layerBlock(4)}
+  )
+};
+// clang-format on
+
+#ifdef RGB_MATRIX_ENABLE
+led_config_t g_led_config = { {
+  // Key Matrix to LED Index
+  {  24, 19,     14, NO_LED,      9,      5,  1, NO_LED },
+  {  25, 20,     15, NO_LED,     10,      6,  2, NO_LED },
+  {  26, 21,     16, NO_LED,     11,      7,  3, NO_LED },
+  {  27, 22,     17, NO_LED,     12,      8,  4,      0 },
+  {  28, 23,     18, NO_LED,     13,     34, 35,     36 },
+  {  44, 49,     54, NO_LED,     58,     62, 66, NO_LED },
+  {  45, 50,     55, NO_LED,     59,     63, 67, NO_LED },
+  {  46, 51,     56, NO_LED,     60,     64, 68, NO_LED },
+  {  47, 52,     57, NO_LED,     61,     65, 69,     70 },
+  {  48, 53, NO_LED, NO_LED, NO_LED, NO_LED, 38,     37 }
+}, {
+  // LED Index to Physical Position
+  // {x,y}: x = 224 / (NUMBER_OF_COLS - 1) * COL_POSITION , y = 64 / (NUMBER_OF_ROWS - 1) * ROW_POSITION
+  {  84, 48 }, //  0
+  {  70,  0 }, //  1
+  {  70, 16 }, //  2
+  {  70, 32 }, //  3
+  {  70, 48 }, //  4
+  {  56,  0 }, //  5
+  {  56, 16 }, //  6
+  {  56, 32 }, //  7
+  {  56, 48 }, //  8
+  {  42,  0 }, //  9
+  {  42, 16 }, // 10
+  {  42, 32 }, // 11
+  {  42, 48 }, // 12
+  {  42, 64 }, // 13
+  {  28,  0 }, // 14
+  {  28, 16 }, // 15
+  {  28, 32 }, // 16
+  {  28, 48 }, // 17
+  {  28, 64 }, // 18
+  {  14,  0 }, // 19
+  {  14, 16 }, // 20
+  {  14, 32 }, // 21
+  {  14, 48 }, // 22
+  {  14, 64 }, // 23
+  {   0,  0 }, // 24
+  {   0, 16 }, // 25
+  {   0, 32 }, // 26
+  {   0, 48 }, // 27
+  {   0, 64 }, // 28
+  {   0,  0 }, // 29 (underglow)
+  {   0,  0 }, // 30 (underglow)
+  {   0,  0 }, // 31 (underglow)
+  {   0,  0 }, // 32 (underglow)
+  {   0,  0 }, // 33 (underglow)
+  {  56, 64 }, // 34
+  {  70, 64 }, // 35
+  {  84, 64 }, // 36
+  { 126, 64 }, // 37
+  { 140, 64 }, // 38
+  {   0,  0 }, // 39 (underglow)
+  {   0,  0 }, // 40 (underglow)
+  {   0,  0 }, // 41 (underglow)
+  {   0,  0 }, // 42 (underglow)
+  {   0,  0 }, // 43 (underglow)
+  { 210,  0 }, // 44
+  { 210, 16 }, // 45
+  { 210, 32 }, // 46
+  { 210, 48 }, // 47
+  { 210, 64 }, // 48
+  { 196,  0 }, // 49
+  { 196, 16 }, // 50
+  { 196, 32 }, // 51
+  { 196, 48 }, // 52
+  { 196, 64 }, // 53
+  { 182,  0 }, // 54
+  { 182, 16 }, // 55
+  { 182, 32 }, // 56
+  { 182, 48 }, // 57
+  { 168,  0 }, // 58
+  { 168, 16 }, // 59
+  { 168, 32 }, // 60
+  { 168, 48 }, // 61
+  { 154,  0 }, // 62
+  { 154, 16 }, // 63
+  { 154, 32 }, // 64
+  { 154, 48 }, // 65
+  { 140,  0 }, // 66
+  { 140, 16 }, // 67
+  { 140, 32 }, // 68
+  { 140, 48 }, // 69
+  { 126, 48 }, // 70
+  {   0,  0 }, // 71 (underglow)
+  {   0,  0 }, // 72 (underglow)
+  {   0,  0 }, // 73 (underglow)
+}, {
+  // LED Index to Flag
+  LED_FLAG_KEYLIGHT, //  0
+  LED_FLAG_KEYLIGHT, //  1
+  LED_FLAG_KEYLIGHT, //  2
+  LED_FLAG_KEYLIGHT, //  3
+  LED_FLAG_KEYLIGHT, //  4
+  LED_FLAG_KEYLIGHT, //  5
+  LED_FLAG_KEYLIGHT, //  6
+  LED_FLAG_KEYLIGHT, //  7
+  LED_FLAG_KEYLIGHT, //  8
+  LED_FLAG_KEYLIGHT, //  9
+  LED_FLAG_KEYLIGHT, // 10
+  LED_FLAG_KEYLIGHT, // 11
+  LED_FLAG_KEYLIGHT, // 12
+  LED_FLAG_KEYLIGHT, // 13
+  LED_FLAG_KEYLIGHT, // 14
+  LED_FLAG_KEYLIGHT, // 15
+  LED_FLAG_KEYLIGHT, // 16
+  LED_FLAG_KEYLIGHT, // 17
+  LED_FLAG_KEYLIGHT, // 18
+  LED_FLAG_KEYLIGHT, // 19
+  LED_FLAG_KEYLIGHT, // 20
+  LED_FLAG_KEYLIGHT, // 21
+  LED_FLAG_KEYLIGHT, // 22
+  LED_FLAG_KEYLIGHT, // 23
+  LED_FLAG_KEYLIGHT, // 24
+  LED_FLAG_KEYLIGHT, // 25
+  LED_FLAG_KEYLIGHT, // 26
+  LED_FLAG_KEYLIGHT, // 27
+  LED_FLAG_KEYLIGHT, // 28
+  LED_FLAG_NONE,     // 29 (underglow)
+  LED_FLAG_NONE,     // 30 (underglow)
+  LED_FLAG_NONE,     // 31 (underglow)
+  LED_FLAG_NONE,     // 32 (underglow)
+  LED_FLAG_NONE,     // 33 (underglow)
+  LED_FLAG_KEYLIGHT, // 34
+  LED_FLAG_KEYLIGHT, // 35
+  LED_FLAG_KEYLIGHT, // 36
+  LED_FLAG_KEYLIGHT, // 37
+  LED_FLAG_KEYLIGHT, // 38
+  LED_FLAG_NONE,     // 39 (underglow)
+  LED_FLAG_NONE,     // 40 (underglow)
+  LED_FLAG_NONE,     // 41 (underglow)
+  LED_FLAG_NONE,     // 42 (underglow)
+  LED_FLAG_NONE,     // 43 (underglow)
+  LED_FLAG_KEYLIGHT, // 44
+  LED_FLAG_KEYLIGHT, // 45
+  LED_FLAG_KEYLIGHT, // 46
+  LED_FLAG_KEYLIGHT, // 47
+  LED_FLAG_KEYLIGHT, // 48
+  LED_FLAG_KEYLIGHT, // 49
+  LED_FLAG_KEYLIGHT, // 50
+  LED_FLAG_KEYLIGHT, // 51
+  LED_FLAG_KEYLIGHT, // 52
+  LED_FLAG_KEYLIGHT, // 53
+  LED_FLAG_KEYLIGHT, // 54
+  LED_FLAG_KEYLIGHT, // 55
+  LED_FLAG_KEYLIGHT, // 56
+  LED_FLAG_KEYLIGHT, // 57
+  LED_FLAG_KEYLIGHT, // 58
+  LED_FLAG_KEYLIGHT, // 59
+  LED_FLAG_KEYLIGHT, // 60
+  LED_FLAG_KEYLIGHT, // 61
+  LED_FLAG_KEYLIGHT, // 62
+  LED_FLAG_KEYLIGHT, // 63
+  LED_FLAG_KEYLIGHT, // 64
+  LED_FLAG_KEYLIGHT, // 65
+  LED_FLAG_KEYLIGHT, // 66
+  LED_FLAG_KEYLIGHT, // 67
+  LED_FLAG_KEYLIGHT, // 68
+  LED_FLAG_KEYLIGHT, // 69
+  LED_FLAG_KEYLIGHT, // 70
+  LED_FLAG_NONE,     // 71 (underglow)
+  LED_FLAG_NONE,     // 72 (underglow)
+  LED_FLAG_NONE      // 73 (underglow)
+} };
+#endif
+
+#ifdef RGB_MATRIX_ENABLE
+${llState[0].m ? `void keyboard_post_init_user(void)
+{
+  rgb_matrix_reload_from_eeprom();
+  layer_state_set_user(layer_state); // 起動直後から L0 の LED 設定にする
+}` : 'void keyboard_post_init_user(void) { rgb_matrix_reload_from_eeprom(); }'}
+#endif
+
+layer_state_t layer_state_set_user(layer_state_t state)
+{
+  keyball_set_scroll_mode(${scrollCond});
+#ifdef RGB_MATRIX_ENABLE
+  // レイヤーと LED を連動させる（一時的な変更で、保存はされない）
+  uint8_t layer = biton32(state);
+  switch (layer) {
+${genLayerLedCases()}  default:
+    rgb_matrix_reload_from_eeprom();
+  }
+#endif
+  return state;
+}
+
+#ifdef OLED_ENABLE
+#include "lib/oledkit/oledkit.h"
+void oledkit_render_info_user(void)
+{
+  keyball_oled_render_keyinfo();
+  keyball_oled_render_ballinfo();
+  oled_write_P(PSTR("Layer:"), false);
+  oled_write(get_u8_str(get_highest_layer(layer_state), ' '), false);
+}
+#endif`;
+}
+
+function render() {
+  llRefresh();
+  renderSize();
+  renderCodeBlock('out-configh',  'config.h',  genConfigH());
+  renderCodeBlock('out-keymapC',  'keymap.c',  genKeymapC());
+  renderCodeBlock('out-rulesmk',  'rules.mk',  genRulesMk());
+}
+
+// ---- Import logic ----
+const importData = { configh: null, keymapc: null, rulesmk: null };
+
+function openImportModal() {
+  document.getElementById('import-modal').classList.add('visible');
+}
+function closeImportModal() {
+  document.getElementById('import-modal').classList.remove('visible');
+}
+// close on overlay click
+document.getElementById('import-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeImportModal();
+});
+
+function handleDragOver(e, slot) {
+  e.preventDefault();
+  document.getElementById('drop-' + slot).classList.add('dragover');
+}
+function handleDragLeave(slot) {
+  document.getElementById('drop-' + slot).classList.remove('dragover');
+}
+function handleDrop(e, slot) {
+  e.preventDefault();
+  handleDragLeave(slot);
+  const file = e.dataTransfer.files[0];
+  if (file) readFile(file, slot);
+}
+function handleFile(e, slot) {
+  const file = e.target.files[0];
+  if (file) readFile(file, slot);
+}
+function readFile(file, slot) {
+  const reader = new FileReader();
+  reader.onload = (e) => parseFile(e.target.result, slot, file.name);
+  reader.readAsText(file);
+}
+
+// --- Parsers ---
+function parseConfigH(text) {
+  const def = (name) => {
+    const m = text.match(new RegExp(`#define\\s+${name}\\s+(\\S+)`));
+    return m ? m[1] : null;
+  };
+  return {
+    KEYBALL_CPI_DEFAULT:           def('KEYBALL_CPI_DEFAULT'),
+    KEYBALL_SCROLL_DIV_DEFAULT:    def('KEYBALL_SCROLL_DIV_DEFAULT'),
+    TAP_CODE_DELAY:                def('TAP_CODE_DELAY'),
+    RGB_MATRIX_MAXIMUM_BRIGHTNESS: def('RGB_MATRIX_MAXIMUM_BRIGHTNESS'),
+    RGB_MATRIX_DEFAULT_HUE:        def('RGB_MATRIX_DEFAULT_HUE'),
+    RGB_MATRIX_DEFAULT_SAT:        def('RGB_MATRIX_DEFAULT_SAT'),
+    RGB_MATRIX_DEFAULT_VAL:        def('RGB_MATRIX_DEFAULT_VAL'),
+    RGB_MATRIX_DEFAULT_MODE:       def('RGB_MATRIX_DEFAULT_MODE'),
+    RGB_MATRIX_TYPING_HEATMAP_SPREAD:        def('RGB_MATRIX_TYPING_HEATMAP_SPREAD'),
+    RGB_MATRIX_TYPING_HEATMAP_DECREASE_DELAY_MS: def('RGB_MATRIX_TYPING_HEATMAP_DECREASE_DELAY_MS'),
+  };
+}
+
+function parseRulesMk(text) {
+  const val = (name) => {
+    const m = text.match(new RegExp(`^\\s*${name}\\s*=\\s*(\\S+)`, 'm'));
+    return m ? m[1].trim() : null;
+  };
+  return {
+    RGB_MATRIX_ENABLE: val('RGB_MATRIX_ENABLE'),
+    OLED_ENABLE:       val('OLED_ENABLE'),
+    VIA_ENABLE:        val('VIA_ENABLE'),
+    RGBLIGHT_ENABLE:   val('RGBLIGHT_ENABLE'),
+  };
+}
+
+function parseKeymapC(text) {
+  // Extract to_reset_time
+  const resetM = text.match(/to_reset_time\s*=\s*(\d+)/);
+  // Extract to_clickable_movement
+  const thrM = text.match(/to_clickable_movement\s*=\s*(\d+)/);
+  // Extract click_layer
+  const clM = text.match(/click_layer\s*=\s*(\d+)/);
+  // Extract scroll mode layer from keyball_set_scroll_mode(...)
+  const scrollM = text.match(/keyball_set_scroll_mode\s*\(([^)]+)\)/);
+  let scrollLayer = null;
+  if (scrollM) {
+    const cond = scrollM[1];
+    if (cond.includes('== 1') && cond.includes('== 3')) scrollLayer = 'both';
+    else { const nm = cond.match(/==\s*(\d+)/); if (nm) scrollLayer = nm[1]; }
+  }
+
+  // Extract keymaps — find each LAYOUT_universal(...) block
+  // S(KC_7) や LT(1,KC_LNG2) のような括弧付きキーを含むので、括弧の深さを数えて切り出す
+  const layerMaps = [];
+  const src = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const layerRe = /\[(\d)\]\s*=\s*LAYOUT_universal\s*\(/g;
+  let lm;
+  while ((lm = layerRe.exec(src)) !== null) {
+    const idx = parseInt(lm[1]);
+    const keys = [];
+    let depth = 0, cur = '', i = layerRe.lastIndex;
+    for (; i < src.length; i++) {
+      const ch = src[i];
+      if (ch === '(') depth++;
+      else if (ch === ')') {
+        if (depth === 0) break;
+        depth--;
+      } else if (ch === ',' && depth === 0) {
+        keys.push(cur.trim()); cur = '';
+        continue;
+      }
+      cur += ch;
+    }
+    if (cur.trim()) keys.push(cur.trim());
+    layerMaps[idx] = keys.filter(s => s.length > 0).map(s => s.replace(/\s+/g, ''));
+    layerRe.lastIndex = i;
+  }
+
+  return {
+    layer_led: parseLayerLed(src),
+    to_reset_time: resetM ? resetM[1] : null,
+    to_clickable_movement: thrM ? thrM[1] : null,
+    click_layer: clM ? clM[1] : null,
+    scroll_layer: scrollLayer,
+    layers: layerMaps,
+  };
+}
+
+function parseFile(text, slot, filename) {
+  let parsed = null;
+  let preview = [];
+  let ok = false;
+
+  try {
+    if (slot === 'configh') {
+      parsed = parseConfigH(text);
+      const found = Object.entries(parsed).filter(([,v]) => v !== null);
+      ok = found.length > 0;
+      preview = found.map(([k,v]) => `<div class="import-parsed-item"><span class="import-parsed-key">${k}</span><span class="import-parsed-val">${v}</span></div>`);
+    } else if (slot === 'rulesmk') {
+      parsed = parseRulesMk(text);
+      const found = Object.entries(parsed).filter(([,v]) => v !== null);
+      ok = found.length > 0;
+      preview = found.map(([k,v]) => `<div class="import-parsed-item"><span class="import-parsed-key">${k}</span><span class="import-parsed-val">${v}</span></div>`);
+    } else if (slot === 'keymapc') {
+      parsed = parseKeymapC(text);
+      ok = !!(parsed.to_reset_time || parsed.click_layer || (parsed.layers && parsed.layers.length));
+      if (parsed.to_reset_time)         preview.push(`<div class="import-parsed-item"><span class="import-parsed-key">to_reset_time</span><span class="import-parsed-val">${parsed.to_reset_time} ms</span></div>`);
+      if (parsed.to_clickable_movement) preview.push(`<div class="import-parsed-item"><span class="import-parsed-key">to_clickable_movement</span><span class="import-parsed-val">${parsed.to_clickable_movement}</span></div>`);
+      if (parsed.click_layer)           preview.push(`<div class="import-parsed-item"><span class="import-parsed-key">click_layer</span><span class="import-parsed-val">Layer ${parsed.click_layer}</span></div>`);
+      if (parsed.scroll_layer)          preview.push(`<div class="import-parsed-item"><span class="import-parsed-key">scroll_layer</span><span class="import-parsed-val">${parsed.scroll_layer}</span></div>`);
+      if (parsed.layers) preview.push(`<div class="import-parsed-item"><span class="import-parsed-key">keymaps</span><span class="import-parsed-val">${parsed.layers.filter(Boolean).length} レイヤー検出</span></div>`);
+    }
+  } catch(e) { ok = false; }
+
+  importData[slot] = ok ? parsed : null;
+
+  const status = document.getElementById('status-' + slot);
+  const parsedEl = document.getElementById('parsed-' + slot);
+  if (ok) {
+    status.textContent = '✓ 読み込み済み';
+    status.className = 'import-slot-status ok';
+    parsedEl.innerHTML = preview.join('');
+    parsedEl.classList.add('visible');
+  } else {
+    status.textContent = '⚠ 解析できませんでした';
+    status.className = 'import-slot-status error';
+    parsedEl.innerHTML = `<div style="color:var(--red);font-size:11px;">対応する設定値が見つかりませんでした。ファイルを確認してください。</div>`;
+    parsedEl.classList.add('visible');
+  }
+
+  // Enable apply button if any slot has data
+  const anyOk = Object.values(importData).some(v => v !== null);
+  document.getElementById('import-apply-btn').disabled = !anyOk;
+}
+
+function setSlider(query, value) {
+  const el = document.querySelector(query);
+  if (el && value !== null) { el.value = value; el.dispatchEvent(new Event('input')); }
+}
+function setSelect(id, value) {
+  const el = document.getElementById(id);
+  if (el && value !== null) { el.value = value; }
+}
+function setToggle(id, lblId, value) {
+  const el = document.getElementById(id);
+  const lbl = document.getElementById(lblId);
+  if (!el || value === null) return;
+  const on = value.toLowerCase() === 'yes';
+  if (on) el.classList.add('on'); else el.classList.remove('on');
+  lbl.textContent = on ? 'yes' : 'no';
+  lbl.className = 'toggle-label ' + (on ? 'on' : 'off');
+}
+
+function applyImport() {
+  const ch = importData.configh;
+  if (ch) {
+    setSlider('input[oninput*="cpi-v"]',  ch.KEYBALL_CPI_DEFAULT);
+    setSlider('input[oninput*="scrl-v"]', ch.KEYBALL_SCROLL_DIV_DEFAULT);
+    setSlider('input[oninput*="tap-v"]',  ch.TAP_CODE_DELAY);
+    setSlider('input[oninput*="br-v"]',   ch.RGB_MATRIX_MAXIMUM_BRIGHTNESS);
+    setSlider('input[oninput*="hue-v"]',  ch.RGB_MATRIX_DEFAULT_HUE);
+    setSlider('input[oninput*="sat-v"]',  ch.RGB_MATRIX_DEFAULT_SAT);
+    setSlider('input[oninput*="val-v"]',  ch.RGB_MATRIX_DEFAULT_VAL);
+    setSlider('input[oninput*="sp-v"]',   ch.RGB_MATRIX_TYPING_HEATMAP_SPREAD);
+    setSlider('input[oninput*="cool-v"]', ch.RGB_MATRIX_TYPING_HEATMAP_DECREASE_DELAY_MS);
+    if (ch.RGB_MATRIX_DEFAULT_MODE) setSelect('rgb-mode', ch.RGB_MATRIX_DEFAULT_MODE);
+  }
+
+  const rm = importData.rulesmk;
+  if (rm) {
+    setToggle('tog-rgb',  'tog-rgb-lbl',  rm.RGB_MATRIX_ENABLE);
+    setToggle('tog-oled', 'tog-oled-lbl', rm.OLED_ENABLE);
+    setToggle('tog-via',  'tog-via-lbl',  rm.VIA_ENABLE);
+    setToggle('tog-rgl',  'tog-rgl-lbl',  rm.RGBLIGHT_ENABLE);
+  }
+
+  const kc = importData.keymapc;
+  if (kc) {
+    setSlider('input[oninput*="rst-v"]', kc.to_reset_time);
+    setSlider('input[oninput*="thr-v"]', kc.to_clickable_movement);
+    if (kc.layer_led) { llState = kc.layer_led; llBuild(); }
+    if (kc.click_layer)  setSelect('click-layer',  kc.click_layer);
+    if (kc.scroll_layer) setSelect('scroll-layer', kc.scroll_layer);
+    if (kc.layers) {
+      kc.layers.forEach((lyr, idx) => {
+        if (!lyr) return;
+        // keymap.c の LAYOUT_universal は 12,12,12,14,14 キー (計64)。
+        // 内部形式は 14 列 x 5 行 = 70 で、0-2 行目の 12-13 列目は空き
+        if (lyr.length !== 64) console.warn(`Layer ${idx}: ${lyr.length} keys (expected 64)`);
+        const target = [];
+        for (let r = 0; r < 3; r++) {
+          const slice = lyr.slice(r * 12, r * 12 + 12);
+          while (slice.length < 12) slice.push('_______');
+          target.push(...slice, '', '');
+        }
+        for (let r = 0; r < 2; r++) {
+          const slice = lyr.slice(36 + r * 14, 36 + r * 14 + 14);
+          while (slice.length < 14) slice.push('_______');
+          target.push(...slice);
+        }
+        layers[idx] = target;
+      });
+      buildGrid();
+    }
+  }
+
+  render();
+  closeImportModal();
+}
+
+
+// ==== .hex 書き込み（Web Serial + AVR109 / Caterina ブートローダー） ====
+// Keyball Link (https://github.com/Yowkees/keyball-link) の src/lib/avr109.ts と
+// src/lib/ihex.ts をもとに、読み戻し確認・チェックサム確認・容量確認を足したもの。
+//   MIT License / Copyright (c) 2026 Shirogane Lab (ineno771)
+//   Permission is hereby granted, free of charge, to any person obtaining a copy of this
+//   software and associated documentation files, to deal in the Software without restriction,
+//   subject to the condition that the above copyright notice and this permission notice
+//   shall be included in all copies or substantial portions of the Software.
+//   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+const FLASH_PAGE_SIZE = 128;
+const FLASH_APP_MAX = 28672;  // ATmega32U4 32KB のうち上位 4KB は Caterina ブートローダー
+
+let hexImage = null;  // ページ境界まで 0xFF で埋めたバイナリ
+
+function parseIntelHex(text) {
+  const buf = new Uint8Array(32768).fill(0xFF);
+  let ext = 0, maxAddr = 0, lineNo = 0, sawEof = false;
+  for (const raw of text.split(/\r?\n/)) {
+    lineNo++;
+    const line = raw.trim();
+    if (!line) continue;
+    if (!line.startsWith(':') || line.length < 11 || line.length % 2 === 0) throw new Error(`${lineNo} 行目が Intel HEX 形式ではありません`);
+    const bytes = [];
+    for (let i = 1; i < line.length; i += 2) bytes.push(parseInt(line.slice(i, i + 2), 16));
+    if (bytes.some(Number.isNaN)) throw new Error(`${lineNo} 行目に不正な文字があります`);
+    const [count, hi, lo, type] = bytes;
+    if (bytes.length !== count + 5) throw new Error(`${lineNo} 行目の長さが合いません`);
+    if ((bytes.reduce((a, b) => a + b, 0) & 0xFF) !== 0) throw new Error(`${lineNo} 行目のチェックサムが合いません（ファイルが壊れている可能性）`);
+    const data = bytes.slice(4, 4 + count);
+    if (type === 0x00) {
+      const addr = ext + ((hi << 8) | lo);
+      if (addr + count > FLASH_APP_MAX) throw new Error(`容量オーバーです（アドレス 0x${(addr + count).toString(16)}）。ブートローダー領域にかかるため書き込めません`);
+      buf.set(data, addr);
+      maxAddr = Math.max(maxAddr, addr + count);
+    } else if (type === 0x01) { sawEof = true; break; }
+    else if (type === 0x02) ext = ((data[0] << 8) | data[1]) << 4;
+    else if (type === 0x04) ext = ((data[0] << 8) | data[1]) << 16;
+  }
+  if (!sawEof) throw new Error('ファイルの終わり（EOF レコード）がありません。途中で切れている可能性があります');
+  if (maxAddr === 0) throw new Error('書き込むデータがありません');
+  return { image: buf.slice(0, Math.ceil(maxAddr / FLASH_PAGE_SIZE) * FLASH_PAGE_SIZE), size: maxAddr };
+}
+
+async function loadHexFile(file) {
+  const info = document.getElementById('hex-info');
+  hexImage = null;
+  document.getElementById('flash-btn').disabled = true;
+  if (!file) return;
+  try {
+    const { image, size } = parseIntelHex(await file.text());
+    hexImage = image;
+    const pct = (size / FLASH_APP_MAX * 100).toFixed(1);
+    let note = '';
+    if (!/keyball61/i.test(file.name)) note = '\n⚠ ファイル名に keyball61 が含まれていません。Keyball61 用か確認してください';
+    info.className = 'flash-fileinfo ok';
+    info.textContent = `✓ ${file.name}\n  ${size.toLocaleString()} バイト（容量の ${pct}%）${note}`;
+    document.getElementById('flash-btn').disabled = !('serial' in navigator);
+  } catch (e) {
+    info.className = 'flash-fileinfo error';
+    info.textContent = `✕ ${file.name}\n  ${e.message}`;
+  }
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+class AVR109 {
+  constructor(port) { this.port = port; this.buf = []; this.reading = false; }
+
+  async open() {
+    await this.port.open({ baudRate: 57600, flowControl: 'none' });
+    this.buf = []; this.reading = true; this.readLoop();
+  }
+  async close() {
+    this.reading = false;
+    try { if (this.reader) await this.reader.cancel(); } catch (e) { /* 切断済み */ }
+    try { await this.port.close(); } catch (e) { /* 切断済み */ }
+  }
+  async readLoop() {
+    while (this.reading) {
+      if (!this.port.readable) { await sleep(10); continue; }
+      this.reader = this.port.readable.getReader();
+      try {
+        for (;;) {
+          const { done, value } = await this.reader.read();
+          if (value) this.buf.push(...value);
+          if (done) break;
+        }
+      } catch (e) { /* 再起動などで切断された */ }
+      finally { try { this.reader.releaseLock(); } catch (e) { /* noop */ } }
+      await sleep(10);
+    }
+  }
+  async read(n, timeout = 3000) {
+    const end = Date.now() + timeout;
+    while (this.buf.length < n) {
+      if (Date.now() > end) throw new Error('キーボードから応答がありません（タイムアウト）');
+      await sleep(1);
+    }
+    return this.buf.splice(0, n);
+  }
+  async send(bytes) {
+    if (!this.port.writable) throw new Error('ポートに書き込めません');
+    const w = this.port.writable.getWriter();
+    try { await w.write(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)); }
+    finally { w.releaseLock(); }
+  }
+  async expectCR(cmd, what, timeout) {
+    await this.send(cmd);
+    const [b] = await this.read(1, timeout);
+    if (b !== 0x0D) throw new Error(`${what}に失敗しました（応答 0x${b.toString(16)}）`);
+  }
+  async sync(sec = 10) {
+    const end = Date.now() + sec * 1000;
+    while (Date.now() < end) {
+      this.buf = [];
+      try {
+        await this.send([0x53]);  // 'S' ソフトウェア ID
+        const id = String.fromCharCode(...await this.read(7, 500));
+        if (/^(CATERIN|LUFA|Arduino)/.test(id)) return id;
+      } catch (e) { /* 応答待ちの間は再試行 */ }
+      await sleep(100);
+    }
+    throw new Error('ブートローダーと通信できませんでした。\n・ポート一覧で Pro Micro（Arduino / SparkFun / USB シリアル）を選びましたか？\n・ブートローダーは約 8 秒で終わります。リセットしてすぐ選んでください。');
+  }
+  async setAddress(byteAddr) {
+    const w = byteAddr >> 1;  // ワードアドレス
+    await this.expectCR([0x41, (w >> 8) & 0xFF, w & 0xFF], 'アドレス設定');
+  }
+  async flash(image, verify, progress) {
+    progress(0, 'ブートローダーを確認しています…');
+    const id = await this.sync();
+    progress(0, `ブートローダー: ${id}`);
+    await this.expectCR([0x50], 'プログラムモード開始');
+    progress(0, 'フラッシュを消去しています…');
+    await this.expectCR([0x65], 'チップ消去', 10000);
+    const pages = image.length / FLASH_PAGE_SIZE;
+    for (let p = 0; p < pages; p++) {
+      const a = p * FLASH_PAGE_SIZE;
+      await this.setAddress(a);
+      await this.send([0x42, 0x00, FLASH_PAGE_SIZE, 0x46]);  // 'B' len 'F'
+      await this.expectCR(image.subarray(a, a + FLASH_PAGE_SIZE), `書き込み（0x${a.toString(16)}）`);
+      progress((p + 1) / pages * (verify ? 70 : 100), `書き込み中… ${p + 1}/${pages} ページ`);
+    }
+    if (verify) {
+      for (let p = 0; p < pages; p++) {
+        const a = p * FLASH_PAGE_SIZE;
+        await this.setAddress(a);
+        await this.send([0x67, 0x00, FLASH_PAGE_SIZE, 0x46]);  // 'g' len 'F'
+        const got = await this.read(FLASH_PAGE_SIZE);
+        for (let i = 0; i < FLASH_PAGE_SIZE; i++) {
+          if (got[i] !== image[a + i]) throw new Error(`確認に失敗しました。アドレス 0x${(a + i).toString(16)} が一致しません。もう一度書き込んでください`);
+        }
+        progress(70 + (p + 1) / pages * 30, `確認中… ${p + 1}/${pages} ページ`);
+      }
+    }
+    await this.expectCR([0x4C], 'プログラムモード終了');
+    await this.send([0x45]);  // 'E' ブートローダー終了 → 再起動
+  }
+}
+
+function flashLog(msg) {
+  const log = document.getElementById('flash-log');
+  log.textContent += `${new Date().toLocaleTimeString()}  ${msg}\n`;
+  log.scrollTop = log.scrollHeight;
+}
+function flashMsg(kind, text) {
+  const m = document.getElementById('flash-msg');
+  m.style.display = 'block';
+  m.className = 'flash-alert flash-alert--' + kind;
+  m.textContent = text;
+}
+
+async function startFlash() {
+  if (!hexImage) return;
+  const btn = document.getElementById('flash-btn');
+  const bar = document.getElementById('flash-bar');
+  document.getElementById('flash-log').textContent = '';
+  bar.style.width = '0';
+  flashMsg('info', 'ポート選択の画面で、キーボードをブートローダーモードにしてから Pro Micro を選んでください。');
+  let port;
+  try {
+    port = await navigator.serial.requestPort();
+  } catch (e) {
+    flashMsg('info', 'ポート選択がキャンセルされました。');
+    return;
+  }
+  btn.disabled = true;
+  const avr = new AVR109(port);
+  try {
+    await avr.open();
+    flashLog('ポートに接続しました');
+    let last = '';
+    await avr.flash(hexImage, document.getElementById('flash-verify').checked, (pct, msg) => {
+      bar.style.width = pct + '%';
+      if (msg !== last && !/^(書き込み中|確認中)/.test(msg)) flashLog(msg);
+      last = msg;
+      flashMsg('info', msg);
+    });
+    bar.style.width = '100%';
+    flashLog('完了');
+    flashMsg('done', '書き込み完了！キーボードが再起動します。もう片方の側も同じ手順で書き込んでください。');
+  } catch (e) {
+    flashLog('エラー: ' + e.message);
+    flashMsg('error', e.message);
+  } finally {
+    await avr.close();
+    btn.disabled = false;
+  }
+}
+
+if (!('serial' in navigator)) document.getElementById('flash-unsupported').style.display = 'block';
+
+// ==== GitHub でビルド（push → Actions の build-user.yml を起動 → 結果へのリンク） ====
+const GH_TOKEN_KEY = 'keyball61-tool-gh-token';
+
+function ghLog(msg) {
+  const log = document.getElementById('gh-log');
+  log.textContent += `${new Date().toLocaleTimeString()}  ${msg}\n`;
+  log.scrollTop = log.scrollHeight;
+}
+function ghMsg(kind, html) {
+  const m = document.getElementById('gh-msg');
+  m.style.display = 'block';
+  m.className = 'flash-alert flash-alert--' + kind;
+  m.innerHTML = html;
+}
+function ghEsc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+function ghConfig() {
+  const repo = document.getElementById('gh-repo').value.trim();
+  const branch = document.getElementById('gh-branch').value.trim();
+  const keymap = document.getElementById('gh-keymap').value.trim();
+  const token = document.getElementById('gh-token').value.trim();
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error('リポジトリは owner/name の形で入力してください');
+  if (!/^[\w.\/-]+$/.test(branch)) throw new Error('ブランチ名が正しくありません');
+  if (!/^[a-z0-9_-]+$/i.test(keymap)) throw new Error('キーマップ名は英数字・_・- だけにしてください');
+  if (!token) throw new Error('アクセストークンを入力してください');
+  return { repo, branch, keymap, token, dir: `qmk_firmware/keyboards/keyball/keyball61/keymaps/${keymap}` };
+}
+
+function ghFiles() {
+  return {
+    'config.h': genConfigH() + '\n',
+    'keymap.c': genKeymapC() + '\n',
+    'rules.mk': genRulesMk() + '\n',
+  };
+}
+
+async function ghApi(cfg, method, path, body) {
+  const res = await fetch(`https://api.github.com/repos/${cfg.repo}${path}`, {
+    method,
+    headers: {
+      'Authorization': `Bearer ${cfg.token}`,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (res.status === 204) return null;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const hint = res.status === 401 ? '（トークンが間違っているか期限切れです）'
+      : res.status === 403 ? '（トークンの権限が足りません。Contents と Actions を Read and write にしてください）'
+      : res.status === 404 ? '（リポジトリ・ブランチ名、またはトークンの対象リポジトリを確認してください）'
+      : '';
+    throw new Error(`GitHub API エラー ${res.status}: ${data.message || res.statusText} ${hint}`);
+  }
+  return data;
+}
+
+// base64 の中身を UTF-8 文字列に戻す
+function ghDecode(b64) {
+  const bin = atob(b64.replace(/\s/g, ''));
+  return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+}
+
+async function ghPreview() {
+  const files = ghFiles();
+  ghMsg('info', 'push する内容は「コード生成」画面と同じです。<br>' +
+    Object.entries(files).map(([n, t]) => `${ghEsc(n)}: ${t.split('\n').length} 行`).join('<br>'));
+}
+
+async function ghPushAndBuild() {
+  const btn = document.getElementById('gh-btn');
+  document.getElementById('gh-log').textContent = '';
+  let cfg;
+  try { cfg = ghConfig(); } catch (e) { ghMsg('error', ghEsc(e.message)); return; }
+  try {
+    if (document.getElementById('gh-remember').checked) localStorage.setItem(GH_TOKEN_KEY, cfg.token);
+    else localStorage.removeItem(GH_TOKEN_KEY);
+  } catch (e) { /* 保存できない環境では無視 */ }
+
+  btn.disabled = true;
+  try {
+    ghMsg('info', 'GitHub に接続しています…');
+    const files = ghFiles();
+
+    // 1. 今の内容と比べて、変わったファイルだけ push する
+    const ref = await ghApi(cfg, 'GET', `/git/ref/heads/${cfg.branch}`);
+    const headSha = ref.object.sha;
+    ghLog(`${cfg.branch} の最新コミット: ${headSha.slice(0, 7)}`);
+    const changed = [];
+    for (const [name, text] of Object.entries(files)) {
+      let current = null;
+      try {
+        const f = await ghApi(cfg, 'GET', `/contents/${cfg.dir}/${name}?ref=${encodeURIComponent(cfg.branch)}`);
+        current = ghDecode(f.content);
+      } catch (e) {
+        if (!/ 404:/.test(e.message)) throw e;  // 404 = まだ無いファイル
+      }
+      if (current !== text) changed.push(name);
+    }
+
+    if (changed.length === 0) {
+      ghLog('3ファイルとも GitHub と同じなので push は省略');
+    } else {
+      ghMsg('info', `push しています（${changed.join(', ')}）…`);
+      const headCommit = await ghApi(cfg, 'GET', `/git/commits/${headSha}`);
+      const tree = await ghApi(cfg, 'POST', '/git/trees', {
+        base_tree: headCommit.tree.sha,
+        tree: changed.map(name => ({ path: `${cfg.dir}/${name}`, mode: '100644', type: 'blob', content: files[name] })),
+      });
+      const commit = await ghApi(cfg, 'POST', '/git/commits', {
+        message: `keymaps/${cfg.keymap} を keyball61設定変更ツールから更新（${changed.join(', ')}）`,
+        tree: tree.sha,
+        parents: [headSha],
+      });
+      await ghApi(cfg, 'PATCH', `/git/refs/heads/${cfg.branch}`, { sha: commit.sha });
+      ghLog(`push しました: ${commit.sha.slice(0, 7)}（${changed.join(', ')}）`);
+    }
+
+    // 2. ビルドを開始
+    const startedAt = Date.now();
+    await ghApi(cfg, 'POST', '/actions/workflows/build-user.yml/dispatches', {
+      ref: cfg.branch, inputs: { keyboard: 'keyball61', keymap: cfg.keymap },
+    });
+    ghLog('ビルドを開始しました');
+
+    // 3. 開始したビルドを探して、終わるまで待つ
+    let run = null;
+    for (let i = 0; i < 300; i++) {
+      await new Promise(r => setTimeout(r, i < 10 ? 3000 : 10000));
+      if (!run) {
+        const list = await ghApi(cfg, 'GET', `/actions/workflows/build-user.yml/runs?event=workflow_dispatch&branch=${encodeURIComponent(cfg.branch)}&per_page=10`);
+        run = (list.workflow_runs || []).find(r => Date.parse(r.created_at) >= startedAt - 60000);
+        if (!run) { ghMsg('info', 'ビルドの開始を待っています…'); continue; }
+        ghLog(`ビルド #${run.run_number}: ${run.html_url}`);
+      } else {
+        run = await ghApi(cfg, 'GET', `/actions/runs/${run.id}`);
+      }
+      const link = `<a href="${ghEsc(run.html_url)}" target="_blank" rel="noopener">Actions の画面を開く</a>`;
+      if (run.status !== 'completed') {
+        ghMsg('info', `ビルド中です（${ghEsc(run.status)}）。数分かかります。 ${link}`);
+        continue;
+      }
+      if (run.conclusion === 'success') {
+        ghLog('ビルド成功');
+        ghMsg('done', `ビルドが成功しました。${link} → 下の Artifacts から <code>keyball61-${ghEsc(cfg.keymap)}-firmware</code> をダウンロードして zip を展開し、中の .hex を「書き込み (.hex)」画面にドラッグしてください。`);
+      } else {
+        ghLog(`ビルド失敗: ${run.conclusion}`);
+        ghMsg('error', `ビルドが失敗しました（${ghEsc(run.conclusion)}）。${link} でエラー内容を確認してください。`);
+      }
+      return;
+    }
+    ghMsg('error', 'ビルドの完了を確認できませんでした。GitHub の Actions 画面を直接確認してください。');
+  } catch (e) {
+    ghLog('エラー: ' + e.message);
+    ghMsg('error', ghEsc(e.message));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+try {
+  const saved = localStorage.getItem(GH_TOKEN_KEY);
+  if (saved) { document.getElementById('gh-token').value = saved; document.getElementById('gh-remember').checked = true; }
+} catch (e) { /* 保存領域が使えない環境 */ }
+
+// ==== キーテスト ====
+// QMK のキーコード → ブラウザの KeyboardEvent.code（物理キー位置。日本語配列でも US 基準の名前）
+const KT_CODE = {
+  ESC: 'Escape', TAB: 'Tab', DEL: 'Delete', BSPC: 'Backspace', ENT: 'Enter', SPC: 'Space',
+  MINS: 'Minus', EQL: 'Equal', LBRC: 'BracketLeft', RBRC: 'BracketRight', NUHS: 'Backslash', NUBS: 'IntlBackslash',
+  SCLN: 'Semicolon', QUOT: 'Quote', GRV: 'Backquote', COMM: 'Comma', DOT: 'Period', SLSH: 'Slash',
+  INT1: 'IntlRo', INT3: 'IntlYen', LNG1: 'Lang1', LNG2: 'Lang2', CAPS: 'CapsLock',
+  LCTL: 'ControlLeft', RCTL: 'ControlRight', LALT: 'AltLeft', RALT: 'AltRight',
+  LGUI: 'MetaLeft', RGUI: 'MetaRight', LSFT: 'ShiftLeft', RSFT: 'ShiftRight',
+  PSCR: 'PrintScreen', LEFT: 'ArrowLeft', RGHT: 'ArrowRight', UP: 'ArrowUp', DOWN: 'ArrowDown',
+  PGUP: 'PageUp', PGDN: 'PageDown', HOME: 'Home', END: 'End', INS: 'Insert',
+};
+// 日本語配列での表示
+const KT_JIS = { ESC: 'Esc', TAB: 'Tab', DEL: 'Del', BSPC: 'BS', ENT: 'Enter', SPC: 'Space', MINS: '-', EQL: '^', LBRC: '@', RBRC: '[', NUHS: ']', SCLN: ';', QUOT: ':', COMM: ',', DOT: '.', SLSH: '/', INT1: '\\', INT3: '¥', LNG1: 'かな', LNG2: '英数', LCTL: 'Ctrl', RCTL: 'Ctrl', LALT: 'Alt', RALT: 'Alt', LGUI: 'Win', RGUI: 'Win', LSFT: 'Shift', RSFT: 'Shift', PSCR: 'PrtSc', LEFT: '←', RGHT: '→', UP: '↑', DOWN: '↓', PGUP: 'PgUp', PGDN: 'PgDn', HOME: 'Home', END: 'End' };
+const KT_JIS_SHIFT = { 1: '!', 2: '"', 3: '#', 4: '$', 5: '%', 6: '&', 7: "'", 8: '(', 9: ')', MINS: '=', EQL: '~', INT3: '|', LBRC: '`', RBRC: '{', NUHS: '}', SCLN: '+', QUOT: '*', COMM: '<', DOT: '>', SLSH: '?', INT1: '_' };
+const KT_SPECIAL = {
+  KC_BTN1: '左クリック', KC_BTN2: '右クリック', KC_BTN3: '中クリック',
+  KC_MY_BTN1: '左クリック', KC_MY_BTN2: '右クリック', KC_MY_BTN3: '中クリック',
+  QK_BOOT: 'Boot', QK_CLEAR_EEPROM: 'EEPROM消去', EEP_RST: 'EEPROM消去', KBC_SAVE: '設定保存', KBC_RST: '設定ﾘｾｯﾄ',
+  CPI_I100: 'CPI+100', CPI_D100: 'CPI-100', CPI_I1K: 'CPI+1k', CPI_D1K: 'CPI-1k',
+  SCRL_TO: 'ｽｸﾛｰﾙ切替', SCRL_MO: 'ｽｸﾛｰﾙ', SCRL_DVI: 'ｽｸﾛｰﾙ遅', SCRL_DVD: 'ｽｸﾛｰﾙ速',
+};
+const KT_MOUSE = { KC_BTN1: 0, KC_MY_BTN1: 0, KC_BTN3: 1, KC_MY_BTN3: 1, KC_BTN2: 2, KC_MY_BTN2: 2 };
+
+function ktBase(kc) { return kc.replace(/^KC_/, ''); }
+function ktLabel(kc) {
+  let m;
+  if (!kc || kc === '_______' || kc === 'KC_TRNS') return { main: '▽' };
+  if (KT_SPECIAL[kc]) return { main: KT_SPECIAL[kc] };
+  if ((m = kc.match(/^MO\((\d)\)$/))) return { main: `L${m[1]}`, hold: '押す間' };
+  if ((m = kc.match(/^LT\((\d),\s*(.+)\)$/))) return { main: ktLabel(m[2]).main, hold: `長押 L${m[1]}` };
+  if ((m = kc.match(/^S\((.+)\)$/))) {
+    const b = ktBase(m[1]);
+    if (KT_JIS_SHIFT[b]) return { main: KT_JIS_SHIFT[b] };
+    if (/^[A-Z]$/.test(b)) return { main: b };
+    return { main: 'S+' + (KT_JIS[b] || b) };
+  }
+  if (kc.startsWith('RGB_')) return { main: kc.replace('RGB_', 'LED ') };
+  const b = ktBase(kc);
+  return { main: KT_JIS[b] || b };
+}
+// そのキーが PC に送る入力: {code, shift} / {mouse} / null（何も送らない）
+function ktSignal(kc) {
+  let m;
+  if (!kc || kc === '_______' || kc === 'KC_TRNS' || kc === 'KC_NO' || kc === 'XXXXXXX') return null;
+  if (kc in KT_MOUSE) return { mouse: KT_MOUSE[kc] };
+  if ((m = kc.match(/^LT\(\d,\s*(.+)\)$/))) return ktSignal(m[1]);  // タップ時のキー
+  if ((m = kc.match(/^S\((.+)\)$/))) { const s = ktSignal(m[1]); return s && s.code ? { code: s.code, shift: true } : null; }
+  const b = ktBase(kc);
+  if (!kc.startsWith('KC_')) return null;
+  if (/^[A-Z]$/.test(b)) return { code: 'Key' + b, shift: false };
+  if (/^[0-9]$/.test(b)) return { code: 'Digit' + b, shift: false };
+  if (/^F([1-9]|1[0-9]|2[0-4])$/.test(b)) return { code: b, shift: false };
+  if (KT_CODE[b]) return { code: KT_CODE[b], shift: false };
+  return null;
+}
+
+// 物理位置: 内部データ 14 列 x 5 行（0-2 行目の 12,13 列目は空き）→ 盤面の列
+function ktPos(i) {
+  const r = Math.floor(i / 14), c = i % 14;
+  if (r < 3) { if (c >= 12) return null; return [c < 6 ? c : c + 2, r]; }
+  return [c, r];
+}
+
+let ktLayer = 0, ktDone = [new Set(), new Set(), new Set(), new Set(), new Set()];
+let ktPressed = new Map();  // code/mouse → [layer, idx]
+let ktRevertTimer = null, ktMouseTimer = null;
+
+function ktSetLayer(n, manual) {
+  if (manual) document.getElementById('kt-auto').checked = false;
+  ktLayer = n;
+  document.querySelectorAll('#kt-tabs .ltab').forEach((t, i) => t.classList.toggle('active', i === n));
+  ktRender();
+}
+
+function ktRender() {
+  const board = document.getElementById('kt-board');
+  if (!board) return;
+  const avail = board.parentElement.clientWidth || 760;
+  const U = Math.max(40, Math.min(58, Math.floor(avail / 14.6))), G = 5, gapX = U * 0.6;
+  board.style.width = (14 * U + gapX - G) + 'px';
+  board.style.height = (5 * U - G) + 'px';
+  board.innerHTML = '';
+  let total = 0, done = 0;
+  layers[ktLayer].forEach((kc, i) => {
+    const p = ktPos(i);
+    if (!p) return;
+    const [c, r] = p;
+    const d = document.createElement('div');
+    const lab = ktLabel(kc);
+    const sig = ktSignal(kc);
+    const trns = !kc || kc === '_______' || kc === 'KC_TRNS';
+    d.className = 'kt-key' + (trns ? ' trns' : !sig ? ' na' : '') + (ktDone[ktLayer].has(i) ? ' done' : '');
+    d.id = `kt-${i}`;
+    d.style.cssText = `left:${c * U + (c >= 7 ? gapX : 0)}px;top:${r * U}px;width:${U - G}px;height:${U - G}px`;
+    const w = [...lab.main].reduce((a, ch) => a + (/[　-鿿＀-￯]/.test(ch) ? 2 : 1), 0);
+    d.innerHTML = `<span class="m${w > 8 ? ' xs' : w > 5 ? ' s' : ''}"></span>${lab.hold ? '<span class="h"></span>' : ''}<span class="c"></span>`;
+    d.querySelector('.m').textContent = lab.main;
+    if (lab.hold) d.querySelector('.h').textContent = lab.hold;
+    d.querySelector('.c').textContent = kc;
+    d.title = kc;
+    board.appendChild(d);
+    if (sig) { total++; if (ktDone[ktLayer].has(i)) done++; }
+  });
+  document.getElementById('kt-progress').textContent = `L${ktLayer}: 確認済み ${done} / ${total} キー（PC に信号が出るキーのみ）`;
+}
+
+// 入力に合うキーを探す。表示中のレイヤーを優先し、無ければほかのレイヤー
+function ktFind(match) {
+  const hits = [];
+  layers.forEach((lyr, l) => lyr.forEach((kc, i) => { const s = ktSignal(kc); if (s && match(s)) hits.push([l, i]); }));
+  if (!hits.length) return null;
+  return hits.find(h => h[0] === ktLayer) || hits.find(h => h[0] === 0) || hits[0];
+}
+
+function ktHit(hit, id, label) {
+  const auto = document.getElementById('kt-auto').checked;
+  clearTimeout(ktRevertTimer);
+  if (auto && hit[0] !== ktLayer) ktSetLayer(hit[0]);
+  ktPressed.set(id, hit);
+  if (!ktDone[hit[0]].has(hit[1])) { ktDone[hit[0]].add(hit[1]); }
+  if (hit[0] === ktLayer) {
+    ktRender();
+    const el = document.getElementById(`kt-${hit[1]}`);
+    if (el) el.classList.add('press');
+  }
+  document.getElementById('kt-status').textContent = `L${hit[0]} ${layers[hit[0]][hit[1]]}`;
+  ktLogLine(`↓ ${label} → L${hit[0]} の ${layers[hit[0]][hit[1]]}`);
+}
+function ktRelease(id) {
+  const hit = ktPressed.get(id);
+  ktPressed.delete(id);
+  if (hit) { const el = document.getElementById(`kt-${hit[1]}`); if (el && hit[0] === ktLayer) el.classList.remove('press'); }
+  // 自動判定のときは、全部離して少したったら L0 表示に戻す（レイヤーキーは離すと戻るため）
+  if (document.getElementById('kt-auto').checked && ktPressed.size === 0 && ktLayer !== 0 && ktLayer !== 4) {
+    clearTimeout(ktRevertTimer);
+    ktRevertTimer = setTimeout(() => ktSetLayer(0), 1500);
+  }
+}
+function ktLogLine(t) {
+  const log = document.getElementById('kt-log');
+  log.textContent = `${new Date().toLocaleTimeString()}  ${t}\n` + log.textContent.split('\n').slice(0, 60).join('\n');
+}
+function ktActive() { return document.getElementById('page-keytest').classList.contains('active'); }
+
+document.addEventListener('keydown', e => {
+  if (!ktActive()) return;
+  e.preventDefault();
+  if (e.repeat) return;
+  const shift = e.shiftKey && !/^Shift/.test(e.code);
+  const hit = ktFind(s => s.code === e.code && (s.shift === shift || /^Shift/.test(e.code)));
+  if (hit) ktHit(hit, e.code, `${e.code}${shift ? ' + Shift' : ''}`);
+  else if (!/^Shift(Left|Right)$/.test(e.code)) ktLogLine(`↓ ${e.code}${shift ? ' + Shift' : ''}（このキーマップに無い入力）`);
+}, true);
+document.addEventListener('keyup', e => { if (ktActive()) { e.preventDefault(); ktRelease(e.code); } }, true);
+
+function ktOnBoard(e) { return ktActive() && e.target.closest && e.target.closest('#kt-board'); }
+document.addEventListener('mousedown', e => {
+  if (!ktOnBoard(e)) return;
+  e.preventDefault();
+  const hit = ktFind(s => s.mouse === e.button);
+  const name = ['左', '中', '右'][e.button] || e.button;
+  if (hit) ktHit(hit, 'mouse' + e.button, `${name}クリック`);
+});
+document.addEventListener('mouseup', e => { if (ktActive()) ktRelease('mouse' + e.button); });
+document.addEventListener('contextmenu', e => { if (ktOnBoard(e)) e.preventDefault(); });
+// ボールを動かすと自動マウスレイヤー（L4）になるので表示も合わせる
+document.addEventListener('mousemove', e => {
+  if (!ktActive() || !document.getElementById('kt-auto').checked) return;
+  if (Math.abs(e.movementX) + Math.abs(e.movementY) < 2) return;
+  const mouseLayer = parseInt(getS('click-layer', '4'), 10);
+  if (ktLayer !== mouseLayer && ktPressed.size === 0) ktSetLayer(mouseLayer);
+  clearTimeout(ktMouseTimer);
+  const wait = parseInt(getV('input[oninput*="rst-v"]', 800), 10) || 800;
+  ktMouseTimer = setTimeout(() => { if (ktLayer === mouseLayer && ktPressed.size === 0 && document.getElementById('kt-auto').checked) ktSetLayer(0); }, wait);
+});
+
+window.addEventListener('resize', () => { if (ktActive()) ktRender(); });
+function ktReset() { ktDone = [new Set(), new Set(), new Set(), new Set(), new Set()]; ktRender(); document.getElementById('kt-log').textContent = ''; }
+
+// ==== 数値の直接入力（スライダーと連動） ====
+function initNumInputs() {
+  document.querySelectorAll('.main input[type=range]').forEach(r => {
+    if (r.nextElementSibling && r.nextElementSibling.classList.contains('num-in')) return;
+    const n = document.createElement('input');
+    n.type = 'number'; n.className = 'num-in'; n.inputMode = 'numeric';
+    n.min = r.min; n.max = r.max; n.step = r.step || 1; n.value = r.value;
+    n.title = `${r.min}〜${r.max}` + (+(r.step || 1) > 1 ? `（${r.step} 刻み）` : '');
+    r.after(n);
+    const commit = (final) => {
+      const raw = n.value.trim(), v = Number(raw);
+      if (raw === '' || !Number.isFinite(v)) {
+        if (final) { n.value = r.value; n.classList.remove('bad'); } else n.classList.add('bad');
+        return;
+      }
+      const min = +r.min, max = +r.max, st = +(r.step || 1);
+      const c = Math.min(max, Math.max(min, Math.round((v - min) / st) * st + min));
+      if (+r.value !== c) { r.value = c; r.dispatchEvent(new Event('input')); }
+      if (final) { n.value = c; n.classList.remove('bad'); } else n.classList.toggle('bad', c !== v);
+    };
+    n.addEventListener('input', () => commit(false));
+    n.addEventListener('change', () => commit(true));
+    n.addEventListener('blur', () => commit(true));
+    r.addEventListener('input', () => { if (document.activeElement !== n) n.value = r.value; });
+  });
+}
+
+// ==== レイヤーごとの LED ====
+// cost: このエフェクトを有効にしたときに増える書き込み容量（バイト、手元のビルドで計測）。
+// 0 は今のファームにすでに入っているもの。hue: 色の指定が効くか
+const LL_EFFECTS = [
+  { v: '',                         label: '通常（基本設定のまま）', hue: false, cost: 0 },
+  { v: 'SOLID_COLOR',              label: '単色',                   hue: true,  cost: 0 },
+  { v: 'TYPING_HEATMAP',           label: 'タイピングヒートマップ', hue: false, cost: 0 },
+  { v: 'SOLID_REACTIVE_MULTIWIDE', label: 'リアクティブ マルチワイド', hue: true, cost: 0 },
+  { v: 'SOLID_SPLASH',           label: 'スプラッシュ（単色）', hue: true, cost: 92 },
+  { v: 'SPLASH',                 label: 'スプラッシュ', hue: true, cost: 96 },
+  { v: 'CYCLE_ALL',              label: '全体で色が変化', hue: false, cost: 148 },
+  { v: 'GRADIENT_UP_DOWN',       label: 'グラデーション（上下）', hue: true, cost: 154 },
+  { v: 'GRADIENT_LEFT_RIGHT',    label: 'グラデーション（左右）', hue: true, cost: 162 },
+  { v: 'CYCLE_UP_DOWN',          label: 'レインボー（上下に流れる）', hue: false, cost: 162 },
+  { v: 'CYCLE_LEFT_RIGHT',       label: 'レインボー（左右に流れる）', hue: false, cost: 168 },
+  { v: 'RAINBOW_MOVING_CHEVRON', label: 'レインボー シェブロン', hue: false, cost: 208 },
+  { v: 'HUE_BREATHING',          label: '色相ブリージング', hue: true, cost: 230 },
+  { v: 'BREATHING',              label: 'ブリージング', hue: true, cost: 232 },
+  { v: 'BAND_SAT',               label: 'バンド彩度', hue: true, cost: 240 },
+  { v: 'BAND_VAL',               label: 'バンド明度', hue: true, cost: 242 },
+  { v: 'PIXEL_RAIN',             label: 'ピクセルレイン', hue: false, cost: 288 },
+  { v: 'SOLID_REACTIVE',         label: 'リアクティブ（押すと色変化）', hue: true, cost: 306 },
+  { v: 'SOLID_REACTIVE_SIMPLE',  label: 'リアクティブ（押すと光る）', hue: true, cost: 308 },
+  { v: 'JELLYBEAN_RAINDROPS',    label: 'ジェリービーンズ', hue: false, cost: 318 },
+  { v: 'RAINBOW_BEACON',         label: 'レインボー ビーコン', hue: false, cost: 360 },
+];
+const LL_LAYER_NAMES = ['デフォルト', 'シフト', '数字・矢印', '設定', 'マウス'];
+const HSV_NAMES = {
+  AZURE: [132, 102, 255], BLACK: [0, 0, 0], OFF: [0, 0, 0], BLUE: [170, 255, 255], CHARTREUSE: [64, 255, 255],
+  CORAL: [11, 176, 255], CYAN: [128, 255, 255], GOLD: [36, 255, 255], GOLDENROD: [30, 218, 218],
+  GREEN: [85, 255, 255], MAGENTA: [213, 255, 255], ORANGE: [21, 255, 255], PINK: [234, 128, 255],
+  PURPLE: [191, 255, 255], RED: [0, 255, 255], SPRINGGREEN: [106, 255, 255], TEAL: [128, 255, 128],
+  TURQUOISE: [123, 90, 112], WHITE: [0, 0, 255], YELLOW: [43, 255, 255],
+};
+let llState = [
+  { m: '', h: 0, s: 0, v: 255 }, { m: '', h: 0, s: 0, v: 255 }, { m: '', h: 0, s: 0, v: 255 },
+  { m: '', h: 0, s: 0, v: 255 }, { m: 'SOLID_COLOR', h: 0, s: 0, v: 255 },
+];
+
+// デフォルトモードの選択肢（レイヤー別と同じ一覧。⚠ は容量を使うもの）
+function initModeSelect() {
+  const sel = document.getElementById('rgb-mode');
+  if (!sel || sel.options.length) return;
+  sel.innerHTML = LL_EFFECTS.filter(e => e.v).map(e =>
+    `<option value="RGB_MATRIX_${e.v}"${e.v === 'TYPING_HEATMAP' ? ' selected' : ''}>${e.cost ? '⚠ ' : ''}${e.label}${e.cost ? `（約${e.cost}B）` : ''}</option>`).join('');
+}
+
+function llEffect(v) { return LL_EFFECTS.find(e => e.v === v); }
+
+// QMK の HSV (0-255) と <input type=color> の #rrggbb の変換。明るさ(V)は別欄なので色は V=255 で表示
+function hsvToHex(h, s) {
+  const hh = h / 255 * 6, ss = s / 255, i = Math.floor(hh) % 6, f = hh - Math.floor(hh);
+  const p = 1 - ss, q = 1 - ss * f, t = 1 - ss * (1 - f);
+  const [r, g, b] = [[1, t, p], [q, 1, p], [p, 1, t], [p, q, 1], [t, p, 1], [1, p, q]][i];
+  return '#' + [r, g, b].map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join('');
+}
+function hexToHs(hex) {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  let h = 0;
+  if (d) h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { h: Math.round(h / 6 * 255) % 256, s: mx ? Math.round(d / mx * 255) : 0 };
+}
+
+function llBuild() {
+  const box = document.getElementById('ll-list');
+  if (!box) return;
+  box.innerHTML = llState.map((st, i) => {
+    let opts = LL_EFFECTS.map(e => `<option value="${e.v}"${e.v === st.m ? ' selected' : ''}>${e.cost ? '⚠ ' : ''}${e.label}${e.cost ? `（約${e.cost}B）` : ''}</option>`).join('');
+    if (!llEffect(st.m)) opts += `<option value="${st.m}" selected>⚠ ${st.m}</option>`;  // 読み込んだ未登録のエフェクト
+    return `<div class="ll-row">
+      <div class="ll-name">L${i}<small>${LL_LAYER_NAMES[i]}</small></div>
+      <select id="ll-m${i}" onchange="llChange(${i})">${opts}</select>
+      <input type="color" id="ll-c${i}" value="${hsvToHex(st.h, st.s)}" oninput="llChange(${i})" title="色（HSV ${st.h}, ${st.s}）">
+      <input type="number" class="num-in small" id="ll-v${i}" min="0" max="255" step="1" value="${st.v}" onchange="llChange(${i})" oninput="llChange(${i})" title="明るさ 0〜255">
+    </div>`;
+  }).join('');
+  llRefresh();
+}
+
+function llChange(i) {
+  const st = llState[i];
+  st.m = document.getElementById('ll-m' + i).value;
+  const hs = hexToHs(document.getElementById('ll-c' + i).value);
+  // 白〜灰色を選んだときは色相が決まらないので、前の色相を残す
+  if (hs.s) st.h = hs.h;
+  st.s = hs.s;
+  const v = Number(document.getElementById('ll-v' + i).value);
+  if (Number.isFinite(v)) st.v = Math.min(255, Math.max(0, Math.round(v)));
+  llRefresh();
+  render();
+}
+
+function llRefresh() {
+  llState.forEach((st, i) => {
+    const e = llEffect(st.m);
+    const c = document.getElementById('ll-c' + i), v = document.getElementById('ll-v' + i);
+    if (!c) return;
+    c.classList.toggle('dim', !st.m || (e && !e.hue));
+    v.classList.toggle('dim', !st.m);
+    c.title = `色（HSV ${st.h}, ${st.s}）`;
+  });
+  const warn = document.getElementById('ll-warn');
+  const msgs = [];
+  const est = sizeEstimate();
+  const ledCost = est.items.filter(it => it.led).reduce((a, it) => a + it.b, 0);
+  if (ledCost > 0) {
+    const extra = llExtraEffects();
+    msgs.push((extra.length ? `追加で有効にするエフェクト: ${extra.join(', ')}。` : '') +
+      `LED の設定で約 ${ledCost} バイト増えます（想定の空き ${(FLASH_APP_MAX - est.total).toLocaleString()} バイト）。` +
+      (est.total > FLASH_APP_MAX ? '<b>容量オーバーでビルドが失敗します。</b>' : ''));
+  }
+  const rgbLayers = llState.map((st, i) => i).filter(i => llState[i].m && (layers[i] || []).some(k => /^RGB_/.test(k)));
+  if (rgbLayers.length) {
+    msgs.push(`L${rgbLayers.join(', L')} には LED 操作キーがあります。このレイヤーで LED キーを押すと、レイヤー用の設定がそのまま基本設定として保存されてしまうので「通常」がおすすめです。`);
+  }
+  if (warn) { warn.innerHTML = msgs.join('<br>'); warn.style.display = msgs.length ? 'block' : 'none'; }
+}
+
+// ==== 想定容量 ====
+// 基準は今の設定（keymaps/albion）を GitHub Actions でビルドした結果 28,148 バイト（2026-10-25）。
+// 各項目の増減は、同じソースを手元でビルドして差を測った値（目安）
+const SIZE_BASE = 28148;
+const SIZE_DELTA = { case: 24, rgbOff: -4748, viaOff: -2778, oledOff: -4062, rgblightOn: 2030 };
+
+function sizeEstimate() {
+  const items = [];
+  const rgb = ruleVal('tog-rgb') === 'yes';
+  if (rgb) {
+    llExtraEffects().forEach(x => {
+      const e = llEffect(x);
+      items.push({ t: `エフェクト ${e ? e.label : x}`, b: e ? e.cost : 300, led: true });
+    });
+    const cases = llState.filter(st => st.m).length;
+    if (cases !== 1) items.push({ t: `レイヤー別 LED ${cases} 件（基準は 1 件）`, b: (cases - 1) * SIZE_DELTA.case, led: true });
+  } else {
+    items.push({ t: 'RGB マトリックスなし（LED 設定は使われない）', b: SIZE_DELTA.rgbOff });
+  }
+  if (ruleVal('tog-via') === 'no') items.push({ t: 'VIA なし（Remap でのキー変更ができなくなる）', b: SIZE_DELTA.viaOff });
+  if (ruleVal('tog-oled') === 'no') items.push({ t: 'OLED なし（画面表示がなくなる）', b: SIZE_DELTA.oledOff });
+  if (ruleVal('tog-rgl') === 'yes') items.push({ t: 'RGBLIGHT あり', b: SIZE_DELTA.rgblightOn,
+    note: 'RGB マトリックスと RGBLIGHT は同時に使えません' });
+  return { total: SIZE_BASE + items.reduce((a, it) => a + it.b, 0), items };
+}
+
+function renderSize() {
+  const bar = document.getElementById('size-bar');
+  if (!bar) return;
+  const { total, items } = sizeEstimate();
+  const pct = total / FLASH_APP_MAX * 100, free = FLASH_APP_MAX - total;
+  bar.classList.toggle('over', free < 0);
+  bar.classList.toggle('warn', free >= 0 && free < 300);
+  document.getElementById('size-fill').style.width = Math.min(100, pct).toFixed(1) + '%';
+  document.getElementById('size-num').innerHTML = free >= 0
+    ? `${total.toLocaleString()} / ${FLASH_APP_MAX.toLocaleString()} バイト <small>（${pct.toFixed(1)}%）</small> 空き ${free.toLocaleString()}`
+    : `${total.toLocaleString()} / ${FLASH_APP_MAX.toLocaleString()} バイト <small>（${pct.toFixed(1)}%）</small> ${(-free).toLocaleString()} 超過`;
+  const sign = b => (b > 0 ? '+' : '') + b.toLocaleString();
+  const notes = items.filter(it => it.note).map(it => `<div class="bad">⚠ ${it.note}</div>`).join('');
+  document.getElementById('size-detail').innerHTML =
+    `<table><tr><td>今の設定（keymaps/albion）の実測</td><td>${SIZE_BASE.toLocaleString()}</td></tr>` +
+    items.map(it => `<tr><td>${it.t}</td><td>${sign(it.b)}</td></tr>`).join('') +
+    `<tr><td><b>想定合計</b></td><td><b>${total.toLocaleString()}</b></td></tr></table>` + notes +
+    `<div>書き込める上限は ${FLASH_APP_MAX.toLocaleString()} バイト（Pro Micro の 32KB からブートローダー分を除いた量）。` +
+    `数字は目安で、正確な値はビルド結果（Actions のログの「firmware size」）で確認できます。キー配置・感度・色などの数値は容量に影響しません。</div>`;
+}
+
+// config.h に ENABLE_RGB_MATRIX_xxx を足す必要があるエフェクト（デフォルトモードも含む）
+function llExtraEffects() {
+  const builtin = ['SOLID_COLOR', 'TYPING_HEATMAP', 'SOLID_REACTIVE_MULTIWIDE'];
+  const list = llState.map(st => st.m);
+  const def = getS('rgb-mode', 'RGB_MATRIX_TYPING_HEATMAP').replace(/^RGB_MATRIX_/, '');
+  list.push(def);
+  return [...new Set(list)].filter(m => m && !builtin.includes(m));
+}
+
+function genLayerLedCases() {
+  return llState.map((st, i) => !st.m ? '' : `  case ${i}:
+    rgb_matrix_mode_noeeprom(RGB_MATRIX_${st.m});
+    rgb_matrix_sethsv_noeeprom(${st.h}, ${st.s}, ${st.v});
+    break;
+`).join('');
+}
+
+// keymap.c の layer_state_set_user から「case n: ... mode ... sethsv ...」を読む
+function parseLayerLed(src) {
+  const fm = src.match(/layer_state_set_user\s*\([^)]*\)\s*\{/);
+  if (!fm) return null;
+  let i = fm.index + fm[0].length, depth = 1;
+  const start = i;
+  for (; i < src.length && depth; i++) { if (src[i] === '{') depth++; else if (src[i] === '}') depth--; }
+  const body = src.slice(start, i - 1);
+  const res = [0, 1, 2, 3, 4].map(() => ({ m: '', h: 0, s: 0, v: 255 }));
+  const re = /case\s+(\d+)\s*:|default\s*:/g;
+  const labels = [];
+  let m;
+  while ((m = re.exec(body)) !== null) labels.push({ n: m[1], at: m.index, end: re.lastIndex });
+  let pending = [];
+  labels.forEach((lb, k) => {
+    if (lb.n === undefined) { pending = []; return; }
+    pending.push(+lb.n);
+    const seg = body.slice(lb.end, k + 1 < labels.length ? labels[k + 1].at : body.length);
+    const mm = seg.match(/rgb_matrix_mode_noeeprom\s*\(\s*RGB_MATRIX_(\w+)\s*\)/);
+    if (!mm && !/break\s*;/.test(seg)) return;  // case 1: case 2: のようなまとめ書き
+    let hsv = null;
+    const hm = seg.match(/rgb_matrix_sethsv_noeeprom\s*\(([^)]*)\)/);
+    if (hm) {
+      const a = hm[1].trim();
+      const nm = a.match(/^HSV_(\w+)$/);
+      if (nm && HSV_NAMES[nm[1]]) hsv = HSV_NAMES[nm[1]];
+      else { const p = a.split(',').map(x => parseInt(x)); if (p.length === 3 && p.every(Number.isFinite)) hsv = p; }
+    }
+    pending.forEach(n => {
+      if (n > 4 || !mm) return;
+      res[n] = { m: mm[1], h: hsv ? hsv[0] : 0, s: hsv ? hsv[1] : 0, v: hsv ? hsv[2] : 255 };
+    });
+    pending = [];
+  });
+  return res;
+}
+
+// Init
+initPicker();
+buildGrid();
+initNumInputs();
+initModeSelect();
+llBuild();
+render();
+</script>
+</body>
+</html>

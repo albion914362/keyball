@@ -8,16 +8,12 @@ on:
         required: true
         type: choice
         options:
-        - keyball39
-        - keyball44
         - keyball61
-        - keyball46
-        - one47
       keymap:
         description: 'Keymap'
         required: true
         type: string
-        default: 'default'
+        default: 'albion'
 
 jobs:
 

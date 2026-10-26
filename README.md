@@ -1,43 +1,29 @@
-# Keyball Series
+# albion の Keyball61
 
 ![Keyball61](./keyball61/doc/rev1/images/kb61_001.jpg)
 
-Keyball series is keyboard family which have 100% track ball.
+[Yowkees/keyball](https://github.com/Yowkees/keyball) をフォークして、自分用の Keyball61 の設定だけを残したリポジトリです。
+ほかの機種（Keyball39 / 44 / 46 / One47）と Keybit8 は削除しています。必要なときは公式リポジトリを見てください。
 
-Keyboards in the family are:
+## 中身
 
-* Available
-    * Keyball39: split + 39 keys + a track ball
-    * Keyball44: split + 44 keys + a track ball
-    * Keyball61: split + 61 keys + a track ball
-* Unavailable
-    * Keyball46 (first one!)
-    * One47
+| 場所 | 内容 |
+|------|------|
+| [tool/keyball61設定変更ツール.html](./tool/keyball61設定変更ツール.html) | 設定変更ツール。ブラウザで開いて config.h / keymap.c / rules.mk を作り、GitHub でビルド、.hex の書き込みまでできる |
+| [qmk_firmware/keyboards/keyball/keyball61/keymaps/albion](./qmk_firmware/keyboards/keyball/keyball61/keymaps/albion) | 自分のキーマップ |
+| [qmk_firmware/keyboards/keyball](./qmk_firmware/keyboards/keyball) | Keyball61 のファームウェアのソース（共通部品の lib/ と drivers/ を含む） |
+| [keyball61/doc](./keyball61/doc/rev1) | 組み立て方（[日本語](./keyball61/doc/rev1/buildguide_jp.md) / [English](./keyball61/doc/rev1/buildguide_en.md)） |
+| [keyball61/design_data](./keyball61/design_data) | 基板・アクリルプレートのデータ |
 
-## Where to Buy
+## ファームウェアのビルド
 
-|Keyboard   |Shirogane Lab / 白銀ラボ                                   |Yushakobo / 遊舎工房                       |
-|-----------|-------------------------------------------|-----------------------------------------------------------|
-|Keyball39  |<https://shiroganelab.com/products/keyball39> |<https://shop.yushakobo.jp/products/5357>  |
-|Keyball44  |<https://shiroganelab.com/products/keyball44> |<https://shop.yushakobo.jp/products/8337>  |
-|Keyball61  |<https://shiroganelab.com/products/keyball61> |<https://shop.yushakobo.jp/products/5358>  |
+GitHub の Actions で作ります。
 
-## Build Guide
+* 設定変更ツールの「GitHub でビルド」から実行する（ふだんはこちら）
+* または Actions の「Build a firmware on demand」を手動で実行し、keymap に `albion` を指定する
 
-*   Keyball39:
-    [English/英語](/keyball39/doc/rev1/buildguide_en.md),
-    [日本語/Japanese](./keyball39/doc/rev1/buildguide_jp.md)
-*   Keyball44:
-    [English/英語](./keyball44/doc/rev1/buildguide_en.md),
-    [日本語/Japanese](./keyball44/doc/rev1/buildguide_jp.md)
-*   Keyball61:
-    [English/英語](./keyball61/doc/rev1/buildguide_en.md),
-    [日本語/Japanese](./keyball61/doc/rev1/buildguide_jp.md)
+できた .hex は Actions の実行結果の Artifacts からダウンロードし、ツールの「書き込み (.hex)」で左右それぞれに書き込みます。
 
-## Firmware
+## ライセンス
 
-See [document for firmware source code](./qmk_firmware/keyboards/keyball/readme.md).
-
-### Pre-compiled Firmwares
-
-(TO BE DOCUMENTED)
+元のリポジトリと同じ [GPL-3.0](./LICENSE) です。キーボードの設計とファームウェアは [@Yowkees](https://github.com/Yowkees) さんによるものです。
