@@ -224,6 +224,31 @@ input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 5px rgba(79,15
 .src-btn { background: none; border: 1px solid var(--border2); color: var(--text); font-size: 11px; padding: 3px 10px; border-radius: 6px; cursor: pointer; }
 .src-btn:hover { border-color: var(--accent); }
 
+/* キーマップの印刷（PDF） */
+#print-area { display: none; }
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  body.printing-keymap { background: #fff !important; }
+  body.printing-keymap .app, body.printing-keymap .modal-overlay { display: none !important; }
+  body.printing-keymap #print-area { display: block; color: #111; font-family: var(--sans); }
+  .pk-page { page-break-after: always; break-after: page; }
+  .pk-page:last-child { page-break-after: auto; break-after: auto; }
+  .pk-layer { margin-bottom: 8mm; }
+  .pk-title { font-size: 14pt; font-weight: 700; margin: 0 0 2mm; }
+  .pk-title small { font-size: 9pt; font-weight: 400; color: #555; margin-left: 4mm; }
+  .pk-board { display: grid; grid-template-columns: repeat(14, 18mm); grid-auto-rows: 13.5mm; gap: 1mm; }
+  .pk-key { border: 0.3mm solid #888; border-radius: 1.5mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; line-height: 1.1; overflow: hidden; }
+  .pk-main { font-size: 10pt; font-weight: 700; }
+  .pk-main.long { font-size: 7.5pt; }
+  .pk-hold { font-size: 6pt; color: #047857; }
+  .pk-code { font-size: 5.5pt; color: #666; font-family: var(--mono); word-break: break-all; }
+  .pk-key.trns { border-style: dashed; color: #bbb; }
+  .pk-key.trns .pk-main { font-weight: 400; }
+  .pk-key.mo { background: #f3e8ff; }
+  .pk-key.lt { background: #ecfdf5; }
+  .pk-foot { font-size: 8pt; color: #666; }
+}
+
 /* 想定容量バー */
 .size-bar { position: sticky; top: 0; z-index: 20; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1.25rem; font-size: 12px; }
 .size-bar summary { display: flex; align-items: center; gap: 10px; padding: .55rem .9rem; cursor: pointer; list-style: none; }
@@ -321,6 +346,14 @@ select:focus { border-color: var(--accent); }
 .key.empty { color: #3a4563; border-color: var(--border); cursor: default; }
 .key.empty:hover { border-color: var(--border); color: #3a4563; }
 .key-top { font-size: 8px; color: var(--muted); }
+.key .key-main { font-family: var(--sans, inherit); font-size: 12px; color: var(--text); font-weight: 600; line-height: 1.1; word-break: break-all; }
+.key .key-hold { font-size: 8px; color: #34d399; }
+.key .key-code { font-size: 8px; color: var(--muted); word-break: break-all; }
+.key .key-main.long { font-size: 10px; }
+.key.mo .key-main { color: #a78bfa; }
+.key.lt .key-main { color: #34d399; }
+.key.empty .key-main { color: #3a4563; font-weight: 400; }
+.key.selected .key-main { color: var(--accent); }
 
 .key-editor-panel {
   background: var(--surface2);
@@ -944,8 +977,11 @@ input[type=text]:focus { border-color: var(--accent); }
         <button class="ltab" onclick="switchLayer(3,this)">L3 設定</button>
         <button class="ltab" onclick="switchLayer(4,this)">L4 マウス</button>
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:.5rem;font-family:var(--mono);">
-        左半分(上) ＋ 右半分(下) の順で表示
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:.5rem;">
+        <div style="flex:1;font-size:10px;color:var(--muted);font-family:var(--mono);">
+          各キーの上段は実際に入力される文字、下段は設定上の表記
+        </div>
+        <button class="src-btn" onclick="printKeymap()" title="2 レイヤーずつ 1 ページ。印刷画面で「PDF に保存」を選ぶと PDF になります">PDF で表示（印刷）</button>
       </div>
       <div id="keygrid" class="keygrid"></div>
       <!-- キーピッカー -->
@@ -1371,7 +1407,14 @@ function buildGrid() {
   data.forEach((k, i) => {
     const d = document.createElement('div');
     d.className = 'key ' + classOf(k) + (i === selectedKeyIdx ? ' selected' : '');
-    d.textContent = labelOf(k);
+    // 上: 実際に入力される文字（キーテストと同じ表記）、下: 設定上の表記
+    if (k) {
+      const lb = ktLabel(k);
+      d.title = k;
+      d.innerHTML = `<span class="key-main${lb.main.length > 4 ? ' long' : ''}">${ghEsc(lb.main)}</span>` +
+        (lb.hold ? `<span class="key-hold">${ghEsc(lb.hold)}</span>` : '') +
+        `<span class="key-code">${ghEsc(labelOf(k))}</span>`;
+    }
     d.onclick = () => selectKey(i, k);
     grid.appendChild(d);
   });
@@ -3102,6 +3145,32 @@ async function ghLoadLatest(manual) {
   }
 }
 
+// ==== キーマップを PDF（印刷）で表示: 2 レイヤーで 1 ページ ====
+function printKeymap() {
+  const names = ['デフォルト', 'シフト', '数字/矢印', '設定', 'マウス'];
+  const layerHtml = n => {
+    const keys = layers[n].map((k, i) => {
+      const pos = ktPos(i);
+      if (!pos || !k) return '';
+      const lb = ktLabel(k);
+      const cls = (k === '_______' || k === 'KC_TRNS') ? 'trns' : classOf(k);
+      return `<div class="pk-key ${cls}" style="grid-column:${pos[0] + 1};grid-row:${pos[1] + 1}">` +
+        `<span class="pk-main${lb.main.length > 4 ? ' long' : ''}">${ghEsc(lb.main)}</span>` +
+        (lb.hold ? `<span class="pk-hold">${ghEsc(lb.hold)}</span>` : '') +
+        `<span class="pk-code">${ghEsc(k === '_______' ? '___' : k)}</span></div>`;
+    }).join('');
+    return `<div class="pk-layer"><div class="pk-title">L${n} ${names[n]}<small>上段: 入力される文字 / 下段: 設定上の表記 / ▽: 下のレイヤーと同じ</small></div><div class="pk-board">${keys}</div></div>`;
+  };
+  const src = document.getElementById('src-msg').textContent;
+  const pages = [[0, 1], [2, 3], [4]].map(ls =>
+    `<div class="pk-page">${ls.map(layerHtml).join('')}<div class="pk-foot">Keyball61 キーマップ（keyball61設定変更ツール、${new Date().toLocaleString()} 出力）　${ghEsc(src)}</div></div>`).join('');
+  document.getElementById('print-area').innerHTML = pages;
+  document.body.classList.add('printing-keymap');
+  const done = () => { document.body.classList.remove('printing-keymap'); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  window.print();
+}
+
 // Init
 initPicker();
 buildGrid();
@@ -3111,5 +3180,6 @@ llBuild();
 render();
 ghLoadLatest(false);
 </script>
+<div id="print-area"></div>
 </body>
 </html>
