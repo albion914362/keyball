@@ -22,25 +22,9 @@ jobs:
     - name: Checkout source
       uses: actions/checkout@v7
 
-    - name: Archive Keyball39 firmwares
-      uses: ./.github/actions/release-archive
-      with: { name: keyball39 }
-
-    - name: Archive Keyball44 firmwares
-      uses: ./.github/actions/release-archive
-      with: { name: keyball44 }
-
     - name: Archive Keyball61 firmwares
       uses: ./.github/actions/release-archive
       with: { name: keyball61 }
-
-    - name: Archive Keyball46 firmwares
-      uses: ./.github/actions/release-archive
-      with: { name: keyball46 }
-
-    - name: Archive One47 firmwares
-      uses: ./.github/actions/release-archive
-      with: { name: one47 }
 
     - name: List archives
       run: ls -l *.zip
