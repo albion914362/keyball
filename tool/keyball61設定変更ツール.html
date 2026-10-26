@@ -216,6 +216,14 @@ input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 5px rgba(79,15
 .ll-warn { font-size: 12px; color: var(--amber, #f0b429); background: rgba(240,180,41,.1); border-radius: 6px; padding: .5rem .75rem; margin-top: .75rem; display: none; line-height: 1.6; }
 @media (max-width: 640px) { .ll-row { grid-template-columns: 52px 1fr auto auto; gap: 6px; } }
 
+/* 読み込み元 */
+.src-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: -.5rem 0 1.25rem; padding: 0 .25rem; }
+.src-bar #src-msg { flex: 1; min-width: 200px; }
+.src-bar.ok #src-msg { color: var(--green); }
+.src-bar.ng #src-msg { color: var(--amber); }
+.src-btn { background: none; border: 1px solid var(--border2); color: var(--text); font-size: 11px; padding: 3px 10px; border-radius: 6px; cursor: pointer; }
+.src-btn:hover { border-color: var(--accent); }
+
 /* 想定容量バー */
 .size-bar { position: sticky; top: 0; z-index: 20; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1.25rem; font-size: 12px; }
 .size-bar summary { display: flex; align-items: center; gap: 10px; padding: .55rem .9rem; cursor: pointer; list-style: none; }
@@ -666,6 +674,12 @@ input[type=text]:focus { border-color: var(--accent); }
   </summary>
   <div class="size-detail" id="size-detail"></div>
 </details>
+
+<!-- 読み込み元（開いたときに GitHub の最新設定を自動で読み込む） -->
+<div class="src-bar" id="src-bar">
+  <span id="src-msg">GitHub の最新設定を読み込んでいます…</span>
+  <button class="src-btn" onclick="ghLoadLatest(true)">GitHub から読み込み直す</button>
+</div>
 
 <!-- トラックボール -->
 <div id="page-mouse" class="page active">
@@ -3047,6 +3061,47 @@ function parseLayerLed(src) {
   return res;
 }
 
+// ==== 開いたときに GitHub の最新設定（keymaps/<キーマップ名>/ の3ファイル）を読み込む ====
+// ツール自体は設定を覚えていないので、ビルドに使った GitHub 上のファイルを正とする。
+// トークンが保存されていれば使う（なくても公開リポジトリなら読める）
+async function ghLoadLatest(manual) {
+  const bar = document.getElementById('src-bar'), msg = document.getElementById('src-msg');
+  if (manual && !confirm('GitHub の最新設定を読み込みます。この画面で変更してまだ push していない内容は消えます。よろしいですか？')) return;
+  const repo = document.getElementById('gh-repo').value.trim();
+  const branch = document.getElementById('gh-branch').value.trim();
+  const keymap = document.getElementById('gh-keymap').value.trim();
+  const token = document.getElementById('gh-token').value.trim();
+  const dir = `qmk_firmware/keyboards/keyball/keyball61/keymaps/${keymap}`;
+  const headers = { Accept: 'application/vnd.github.raw+json' };
+  if (token) headers.Authorization = 'Bearer ' + token;
+  bar.className = 'src-bar';
+  msg.textContent = 'GitHub の最新設定を読み込んでいます…';
+  try {
+    const get = async (name) => {
+      const r = await fetch(`https://api.github.com/repos/${repo}/contents/${dir}/${name}?ref=${encodeURIComponent(branch)}`, { headers, cache: 'no-store' });
+      if (!r.ok) throw new Error(`${name}: ${r.status}`);
+      return r.text();
+    };
+    const [ch, km, rm] = await Promise.all(['config.h', 'keymap.c', 'rules.mk'].map(get));
+    let when = '';
+    try {
+      const r = await fetch(`https://api.github.com/repos/${repo}/commits?path=${dir}&sha=${encodeURIComponent(branch)}&per_page=1`,
+        { headers: token ? { Authorization: 'Bearer ' + token } : {}, cache: 'no-store' });
+      const c = r.ok ? (await r.json())[0] : null;
+      if (c) when = `（${new Date(c.commit.committer.date).toLocaleString()} 更新、${c.sha.slice(0, 7)}）`;
+    } catch (e) { /* 日時が取れなくても読み込みは続ける */ }
+    parseFile(ch, 'configh', 'config.h');
+    parseFile(km, 'keymapc', 'keymap.c');
+    parseFile(rm, 'rulesmk', 'rules.mk');
+    applyImport();
+    bar.className = 'src-bar ok';
+    msg.textContent = `GitHub（${repo} の ${branch} / ${keymap}）の最新設定を表示しています${when}`;
+  } catch (e) {
+    bar.className = 'src-bar ng';
+    msg.textContent = `GitHub から読み込めなかったので、ツールの初期値を表示しています（${e.message}）。ネットにつながっているか、「GitHub でビルド」画面のリポジトリ名などを確認してください。`;
+  }
+}
+
 // Init
 initPicker();
 buildGrid();
@@ -3054,6 +3109,7 @@ initNumInputs();
 initModeSelect();
 llBuild();
 render();
+ghLoadLatest(false);
 </script>
 </body>
 </html>
