@@ -233,13 +233,15 @@ input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 5px rgba(79,15
   body.printing-keymap #print-area { display: block; color: #111; font-family: var(--sans); }
   .pk-page { page-break-after: always; break-after: page; }
   .pk-page:last-child { page-break-after: auto; break-after: auto; }
-  .pk-layer { margin-bottom: 8mm; }
-  .pk-title { font-size: 14pt; font-weight: 700; margin: 0 0 2mm; }
+  .pk-layer { margin-bottom: 4mm; }
+  .pk-title { font-size: 13pt; font-weight: 700; margin: 0 0 1mm; }
   .pk-title small { font-size: 9pt; font-weight: 400; color: #555; margin-left: 4mm; }
-  .pk-board { display: grid; grid-template-columns: repeat(14, 18mm); grid-auto-rows: 13.5mm; gap: 1mm; }
-  .pk-key { border: 0.3mm solid #888; border-radius: 1.5mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; line-height: 1.1; overflow: hidden; }
-  .pk-main { font-size: 10pt; font-weight: 700; }
-  .pk-main.long { font-size: 7.5pt; }
+  .pk-board { position: relative; margin: 0 auto; }
+  .pk-key.ghost { opacity: .5; }
+  .pk-ball { position: absolute; border-radius: 50%; border: 0.4mm solid #888; background: #f3f4f6; }
+  .pk-key { position: absolute; border: 0.3mm solid #888; border-radius: 1.5mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; line-height: 1.1; overflow: hidden; }
+  .pk-main { font-size: 9pt; font-weight: 700; }
+  .pk-main.long { font-size: 6.5pt; }
   .pk-hold { font-size: 6pt; color: #047857; }
   .pk-code { font-size: 5.5pt; color: #666; font-family: var(--mono); word-break: break-all; }
   .pk-key.trns { border-style: dashed; color: #bbb; }
@@ -521,6 +523,19 @@ input[type=text]:focus { border-color: var(--accent); }
 .kt-opts { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; gap: 12px; flex-wrap: wrap; }
 .kt-board-wrap { overflow-x: auto; padding: 4px 0 8px; }
 .kt-board { position: relative; outline: none; margin: 0 auto; }
+.kt-key { transform: rotate(var(--rot, 0deg)); }
+.kt-key.press { transform: rotate(var(--rot, 0deg)) scale(.94) !important; }
+.kt-key.ghost { opacity: .45; border-style: dashed; }
+.kt-key.ghost .c { display: none; }
+.kb-ball { position: absolute; border-radius: 50%; border: 1.5px solid var(--border2); background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.12), transparent 60%), var(--surface); }
+.kb-ghost-label { position: absolute; font-size: 9px; color: var(--muted); white-space: nowrap; }
+.km-key { cursor: pointer; }
+.km-key:hover { border-color: var(--accent); }
+.km-key.sel { border-color: var(--accent); background: rgba(79,156,249,.18); }
+.km-key.mo { border-color: #7c3aed88; }
+.km-key.mo .m { color: #a78bfa; }
+.km-key.lt { border-color: #05966988; }
+.km-key.lt .m { color: #34d399; }
 .kt-key { position: absolute; border-radius: 7px; border: 1.5px solid var(--border2); background: var(--surface2); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; transition: background .25s, border-color .25s, transform .08s; }
 .kt-key .m { font-size: 14px; font-weight: 600; line-height: 1.1; white-space: nowrap; }
 .kt-key .m.s { font-size: 11px; }
@@ -983,7 +998,7 @@ input[type=text]:focus { border-color: var(--accent); }
         </div>
         <button class="src-btn" onclick="printKeymap()" title="2 レイヤーずつ 1 ページ。印刷画面で「PDF に保存」を選ぶと PDF になります">PDF で表示（印刷）</button>
       </div>
-      <div id="keygrid" class="keygrid"></div>
+      <div class="kt-board-wrap"><div id="keygrid" class="kt-board"></div></div>
       <!-- キーピッカー -->
       <div id="key-picker" class="key-picker-panel">
         <div class="picker-header">
@@ -1317,6 +1332,7 @@ function show(page, el) {
   el.classList.add('active');
   if (page === 'output') render();
   if (page === 'keytest') ktRender();
+  if (page === 'keymap') buildGrid();
 }
 function setVal(id, v) { document.getElementById(id).textContent = v; }
 
@@ -1399,24 +1415,67 @@ function labelOf(k) {
   return k;
 }
 
+// ==== Keyball61 の実物の配置（Remap の表示に合わせた目安。単位 u = キー1個分） ====
+// 左手の列ごとの上下のずれ（中指が一番上）。右手は左右反転
+const KB_COL_OFF = [0, 0, -0.34, -0.59, -0.46, -0.34];
+const KB_W = 15.5;  // 左端のキーの左上 x=0 から、右端のキーの左上まで
+const KB_TOP = 0.6;  // 中指の列が上にずれる分、全体を下げる
+const KB_H = 6.65;   // 盤面の高さ（u）
+// 左手の (行, 列) → {x, y, rot}。列は外側(0)から内側(6)
+function kbLeft(r, c) {
+  if (r < 3 || (r === 3 && c <= 5)) return { x: c, y: r + KB_COL_OFF[c], rot: 0 };
+  if (r === 3) return { x: 6, y: 2.79, rot: 0 };  // 内側の縦長キー（[ / ]）
+  return [{ x: 0, y: 4, rot: 0 }, { x: 1, y: 4, rot: 0 }, { x: 2, y: 3.66, rot: 0 }, { x: 3, y: 3.41, rot: 0 },
+    { x: 4.3, y: 3.92, rot: 6 }, { x: 5.38, y: 3.98, rot: 13 }, { x: 6.42, y: 4.27, rot: 24 }][c];
+}
+// 内部データの番号（14 列 x 5 行）→ 位置。右手の最下段の内側 3 つ（列 9〜11）はボールの下で、実物のキーはない
+function kbGeom(i) {
+  const r = Math.floor(i / 14), c = i % 14;
+  if (r < 3) {
+    if (c >= 12) return null;
+    if (c < 6) return kbLeft(r, c);
+    const g = kbLeft(r, 11 - c); return { x: KB_W - g.x, y: g.y, rot: -g.rot };
+  }
+  if (c < 7) return kbLeft(r, c);
+  if (r === 4 && c >= 9 && c <= 11) return { x: 11.2 + (c - 9) * 0.95, y: 5.2, rot: 0, ghost: true };
+  const g = kbLeft(r, 13 - c); return { x: KB_W - g.x, y: g.y, rot: -g.rot };
+}
+// board に 64 キーを並べる。make(i, kc, el) で中身を作る
+function kbDraw(board, data, make) {
+  const avail = board.parentElement.clientWidth || 760;
+  const U = Math.max(36, Math.min(58, Math.floor(avail / (KB_W + 1.1)))), G = 4;
+  board.style.width = ((KB_W + 1) * U - G) + 'px';
+  board.style.height = (KB_H * U) + 'px';
+  board.innerHTML = `<div class="kb-ball" style="left:${(KB_W - 3.5) * U}px;top:${(3.45 + KB_TOP) * U}px;width:${1.5 * U}px;height:${1.5 * U}px"></div>` +
+    `<div class="kb-ghost-label" style="left:${7.4 * U}px;top:${(5.45 + KB_TOP) * U}px">ボールの位置（実物のキーなし）→</div>`;
+  data.forEach((kc, i) => {
+    const g = kbGeom(i);
+    if (!g) return;
+    const d = document.createElement('div');
+    const sz = g.ghost ? U * 0.85 : U;
+    d.style.cssText = `left:${g.x * U}px;top:${(g.y + KB_TOP) * U}px;width:${sz - G}px;height:${sz - G}px;--rot:${g.rot}deg`;
+    if (g.ghost) d.dataset.ghost = '1';
+    make(i, kc, d);
+    board.appendChild(d);
+  });
+}
+function kbLabelHtml(kc) {
+  const lab = ktLabel(kc);
+  const w = [...lab.main].reduce((a, ch) => a + (/[　-鿿＀-￯]/.test(ch) ? 2 : 1), 0);
+  return `<span class="m${w > 8 ? ' xs' : w > 5 ? ' s' : ''}">${ghEsc(lab.main)}</span>` +
+    (lab.hold ? `<span class="h">${ghEsc(lab.hold)}</span>` : '') + `<span class="c">${ghEsc(kc === '_______' ? '___' : kc)}</span>`;
+}
+
 function buildGrid() {
   const grid = document.getElementById('keygrid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  const data = layers[currentLayer];
-  data.forEach((k, i) => {
-    const d = document.createElement('div');
-    d.className = 'key ' + classOf(k) + (i === selectedKeyIdx ? ' selected' : '');
-    // 上: 実際に入力される文字（キーテストと同じ表記）、下: 設定上の表記
-    if (k) {
-      const lb = ktLabel(k);
-      d.title = k;
-      d.innerHTML = `<span class="key-main${lb.main.length > 4 ? ' long' : ''}">${ghEsc(lb.main)}</span>` +
-        (lb.hold ? `<span class="key-hold">${ghEsc(lb.hold)}</span>` : '') +
-        `<span class="key-code">${ghEsc(labelOf(k))}</span>`;
-    }
+  if (!grid || !grid.parentElement.clientWidth) return;  // 非表示中は描かない（表示したときに描く）
+  kbDraw(grid, layers[currentLayer], (i, k, d) => {
+    const trns = !k || k === '_______' || k === 'KC_TRNS';
+    d.className = 'kt-key km-key' + (trns ? ' trns' : '') + (classOf(k) === 'mo' ? ' mo' : classOf(k) === 'lt' ? ' lt' : '') +
+      (d.dataset.ghost ? ' ghost' : '') + (i === selectedKeyIdx ? ' sel' : '');
+    d.innerHTML = kbLabelHtml(k);
+    d.title = k + (d.dataset.ghost ? '（ボールの下。実物のキーはありません）' : '');
     d.onclick = () => selectKey(i, k);
-    grid.appendChild(d);
   });
 }
 // ---- Key Picker data ----
@@ -2755,31 +2814,15 @@ function ktSetLayer(n, manual) {
 function ktRender() {
   const board = document.getElementById('kt-board');
   if (!board) return;
-  const avail = board.parentElement.clientWidth || 760;
-  const U = Math.max(40, Math.min(58, Math.floor(avail / 14.6))), G = 5, gapX = U * 0.6;
-  board.style.width = (14 * U + gapX - G) + 'px';
-  board.style.height = (5 * U - G) + 'px';
-  board.innerHTML = '';
   let total = 0, done = 0;
-  layers[ktLayer].forEach((kc, i) => {
-    const p = ktPos(i);
-    if (!p) return;
-    const [c, r] = p;
-    const d = document.createElement('div');
-    const lab = ktLabel(kc);
+  kbDraw(board, layers[ktLayer], (i, kc, d) => {
     const sig = ktSignal(kc);
     const trns = !kc || kc === '_______' || kc === 'KC_TRNS';
-    d.className = 'kt-key' + (trns ? ' trns' : !sig ? ' na' : '') + (ktDone[ktLayer].has(i) ? ' done' : '');
+    d.className = 'kt-key' + (trns ? ' trns' : !sig ? ' na' : '') + (ktDone[ktLayer].has(i) ? ' done' : '') + (d.dataset.ghost ? ' ghost' : '');
     d.id = `kt-${i}`;
-    d.style.cssText = `left:${c * U + (c >= 7 ? gapX : 0)}px;top:${r * U}px;width:${U - G}px;height:${U - G}px`;
-    const w = [...lab.main].reduce((a, ch) => a + (/[　-鿿＀-￯]/.test(ch) ? 2 : 1), 0);
-    d.innerHTML = `<span class="m${w > 8 ? ' xs' : w > 5 ? ' s' : ''}"></span>${lab.hold ? '<span class="h"></span>' : ''}<span class="c"></span>`;
-    d.querySelector('.m').textContent = lab.main;
-    if (lab.hold) d.querySelector('.h').textContent = lab.hold;
-    d.querySelector('.c').textContent = kc;
+    d.innerHTML = kbLabelHtml(kc);
     d.title = kc;
-    board.appendChild(d);
-    if (sig) { total++; if (ktDone[ktLayer].has(i)) done++; }
+    if (sig && !d.dataset.ghost) { total++; if (ktDone[ktLayer].has(i)) done++; }
   });
   document.getElementById('kt-progress').textContent = `L${ktLayer}: 確認済み ${done} / ${total} キー（PC に信号が出るキーのみ）`;
 }
@@ -2854,7 +2897,7 @@ document.addEventListener('mousemove', e => {
   ktMouseTimer = setTimeout(() => { if (ktLayer === mouseLayer && ktPressed.size === 0 && document.getElementById('kt-auto').checked) ktSetLayer(0); }, wait);
 });
 
-window.addEventListener('resize', () => { if (ktActive()) ktRender(); });
+window.addEventListener('resize', () => { if (ktActive()) ktRender(); if (document.getElementById('page-keymap').classList.contains('active')) buildGrid(); });
 function ktReset() { ktDone = [new Set(), new Set(), new Set(), new Set(), new Set()]; ktRender(); document.getElementById('kt-log').textContent = ''; }
 
 // ==== 数値の直接入力（スライダーと連動） ====
@@ -3149,17 +3192,20 @@ async function ghLoadLatest(manual) {
 function printKeymap() {
   const names = ['デフォルト', 'シフト', '数字/矢印', '設定', 'マウス'];
   const layerHtml = n => {
+    const U = 11.5;  // mm
     const keys = layers[n].map((k, i) => {
-      const pos = ktPos(i);
-      if (!pos || !k) return '';
+      const g = kbGeom(i);
+      if (!g || !k) return '';
       const lb = ktLabel(k);
-      const cls = (k === '_______' || k === 'KC_TRNS') ? 'trns' : classOf(k);
-      return `<div class="pk-key ${cls}" style="grid-column:${pos[0] + 1};grid-row:${pos[1] + 1}">` +
+      const cls = ((k === '_______' || k === 'KC_TRNS') ? 'trns' : classOf(k)) + (g.ghost ? ' ghost' : '');
+      const sz = (g.ghost ? U * 0.85 : U) - 0.8;
+      return `<div class="pk-key ${cls}" style="left:${g.x * U}mm;top:${(g.y + KB_TOP) * U}mm;width:${sz}mm;height:${sz}mm;transform:rotate(${g.rot}deg)">` +
         `<span class="pk-main${lb.main.length > 4 ? ' long' : ''}">${ghEsc(lb.main)}</span>` +
         (lb.hold ? `<span class="pk-hold">${ghEsc(lb.hold)}</span>` : '') +
         `<span class="pk-code">${ghEsc(k === '_______' ? '___' : k)}</span></div>`;
     }).join('');
-    return `<div class="pk-layer"><div class="pk-title">L${n} ${names[n]}<small>上段: 入力される文字 / 下段: 設定上の表記 / ▽: 下のレイヤーと同じ</small></div><div class="pk-board">${keys}</div></div>`;
+    const ball = `<div class="pk-ball" style="left:${(KB_W - 3.5) * U}mm;top:${(3.45 + KB_TOP) * U}mm;width:${1.5 * U}mm;height:${1.5 * U}mm"></div>`;
+    return `<div class="pk-layer"><div class="pk-title">L${n} ${names[n]}<small>上段: 入力される文字 / 下段: 設定上の表記 / ▽: 下のレイヤーと同じ</small></div><div class="pk-board" style="width:${(KB_W + 1) * U}mm;height:${KB_H * U}mm">${ball}${keys}</div></div>`;
   };
   const src = document.getElementById('src-msg').textContent;
   const pages = [[0, 1], [2, 3], [4]].map(ls =>
