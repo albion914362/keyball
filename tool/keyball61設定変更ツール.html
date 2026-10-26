@@ -84,6 +84,8 @@ body {
   transition: all .15s;
   user-select: none;
 }
+a.nav-item { text-decoration: none; }
+.nav-ext { margin-left: auto; font-size: 11px; opacity: .6; }
 .nav-item:hover { color: var(--text); background: var(--surface2); }
 .nav-item.active {
   color: var(--accent);
@@ -638,6 +640,11 @@ input[type=text]:focus { border-color: var(--accent); }
   <div class="nav-item" onclick="show('flash', this)">
     <span class="nav-dot"></span>書き込み (.hex)
   </div>
+  <div class="nav-group-label">外部サイト</div>
+  <a class="nav-item nav-link" href="https://remap-keys.app/configure" target="_blank" rel="noopener"
+     title="Remap（キー配置をその場で変更。Chrome / Edge で、VIA が有効なファームが必要）">
+    <span class="nav-dot"></span>Remap を開く<span class="nav-ext">↗</span>
+  </a>
   <div style="flex:1"></div>
   <div class="import-section">
     <div class="import-section-label">ファイル読み込み</div>
