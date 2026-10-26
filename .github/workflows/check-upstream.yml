@@ -31,6 +31,7 @@ jobs:
       - name: Check upstream
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }} # remote "upstream" を足すので gh の対象を明示
           INPUT_BASE: ${{ inputs.base }}
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
@@ -80,8 +81,8 @@ jobs:
             exit 0
           fi
 
-          gh label create "公式更新" --color FBCA04 --description "公式 Yowkees/keyball の更新" 2>/dev/null || true
-          gh label create "解説済み" --color 0E8A16 --description "Claude が解説を書いた" 2>/dev/null || true
+          gh label create "公式更新" --color FBCA04 --description "公式 Yowkees/keyball の更新" --force
+          gh label create "解説済み" --color 0E8A16 --description "Claude が解説を書いた" --force
 
           OPEN=$(gh issue list --label "公式更新" --state open --json number,body \
             --jq 'map(select(.body | contains("upstream-head:"))) | .[0] // empty')
