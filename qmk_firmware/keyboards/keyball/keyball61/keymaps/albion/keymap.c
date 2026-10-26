@@ -309,14 +309,6 @@ layer_state_t layer_state_set_user(layer_state_t state)
   // レイヤーと LED を連動させる（一時的な変更で、保存はされない）
   uint8_t layer = biton32(state);
   switch (layer) {
-  case 1:
-    rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-    rgb_matrix_sethsv_noeeprom(170, 255, 255);
-    break;
-  case 2:
-    rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-    rgb_matrix_sethsv_noeeprom(0, 255, 255);
-    break;
   case 4:
     rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
     rgb_matrix_sethsv_noeeprom(0, 0, 255);
