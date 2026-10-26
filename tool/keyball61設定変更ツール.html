@@ -1104,7 +1104,7 @@ input[type=text]:focus { border-color: var(--accent); }
         <div class="row-ctrl"><input class="gh-input" id="gh-token" type="password" placeholder="github_pat_..." autocomplete="off"></div>
       </div>
       <div class="row">
-        <div><div class="row-label">トークンを保存</div><div class="row-hint">このブラウザだけに保存（共用 PC では OFF）</div></div>
+        <div><div class="row-label">トークンを保存</div><div class="row-hint">このブラウザ・この開き方（公開 URL か手元のファイルか）ごとに保存。共用 PC では OFF</div></div>
         <div class="row-ctrl"><label class="flash-opt"><input type="checkbox" id="gh-remember"> 保存する</label></div>
       </div>
       <details class="gh-help">
@@ -2608,6 +2608,17 @@ try {
   const saved = localStorage.getItem(GH_TOKEN_KEY);
   if (saved) { document.getElementById('gh-token').value = saved; document.getElementById('gh-remember').checked = true; }
 } catch (e) { /* 保存領域が使えない環境 */ }
+
+// 「保存する」にチェックがあれば、push を待たずに入力した時点で保存する
+function ghSaveToken() {
+  const token = document.getElementById('gh-token').value.trim();
+  try {
+    if (document.getElementById('gh-remember').checked && token) localStorage.setItem(GH_TOKEN_KEY, token);
+    else localStorage.removeItem(GH_TOKEN_KEY);
+  } catch (e) { /* 保存できない環境では無視 */ }
+}
+document.getElementById('gh-token').addEventListener('change', ghSaveToken);
+document.getElementById('gh-remember').addEventListener('change', ghSaveToken);
 
 // ==== キーテスト ====
 // QMK のキーコード → ブラウザの KeyboardEvent.code（物理キー位置。日本語配列でも US 基準の名前）
