@@ -319,7 +319,7 @@ layer_state_t layer_state_set_user(layer_state_t state)
     break;
   case 4:
     rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-    rgb_matrix_sethsv_noeeprom(0, 0, 255);
+    rgb_matrix_sethsv_noeeprom(85, 255, 255);
     break;
   default:
     rgb_matrix_reload_from_eeprom();
