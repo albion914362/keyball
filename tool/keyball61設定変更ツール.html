@@ -1743,7 +1743,7 @@ function switchLayer(n, el) {
   currentLayer = n;
   selectedKeyIdx = null;
   document.getElementById('key-picker').classList.remove('visible');
-  document.querySelectorAll('.ltab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#page-keymap .ltab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   buildGrid();
 }
@@ -3406,37 +3406,18 @@ async function ghLoadLatest(manual) {
   try { cfg = ghConfig(false); } catch (e) { bar.className = 'src-bar ng'; msg.textContent = e.message; return; }
   bar.className = 'src-bar';
   msg.textContent = 'GitHub の最新設定を読み込んでいます…';
-  const back = curProfile;
+  // 読み込み中も画面は操作できるので、ファイルを全部取ってから、途中で待たずにまとめて反映する。
+  // 反映の直前に表示中の配列を覚えておき、最後にその配列の表示へ戻す（途中で大西の画面を開いても QWERTY に戻らないように）
   try {
     const get = name => ghGetFile(cfg, `${cfg.dir}/${name}`);
     const need = async name => { const t = await get(name); if (t === null) throw new Error(`${name} がありません`); return t; };
     const [cc, ca, cr] = await Promise.all(['config_common.h', 'auto_mouse.h', 'rules_common.mk'].map(n => get(`${COMMON_KEYMAP}/${n}`)));
     const q = await Promise.all(['config.h', 'keymap.c', 'rules.mk'].map(n => get(`${PROF.qwerty.keymap}/${n}`)));
     const o = await Promise.all(['config.h', 'keymap.c', 'rules.mk'].map(n => get(`${PROF.onishi.keymap}/${n}`)));
-    let note = '', legacy = false, dirs = [];
-    if (q[1] !== null) {
-      // 新しい構成。共通ファイルの中身もいっしょに読む（設定値を探すだけなので、つなげて読めばよい）
-      if (cc === null || ca === null || cr === null) throw new Error(`${COMMON_KEYMAP} の共通ファイルがそろっていません`);
-      switchProfile('qwerty');
-      applyTexts(cc + '\n' + q[0], ca + '\n' + q[1], cr + '\n' + q[2]);
-      if (o[1] !== null) {
-        switchProfile('onishi');
-        applyTexts(cc + '\n' + o[0], ca + '\n' + o[1], cr + '\n' + o[2]);
-      } else {
-        profiles.onishi = makeOnishi(snapProfile());
-        note = '大西用（albion_onishi）はまだ GitHub に無いので、QWERTY から作った案を表示しています。';
-      }
-      dirs = [COMMON_KEYMAP, PROF.qwerty.keymap, PROF.onishi.keymap];
-    } else {
-      // 古い構成
-      const [ch, km, rm] = await Promise.all(['config.h', 'keymap.c', 'rules.mk'].map(n => need(`${COMMON_KEYMAP}/${n}`)));
-      switchProfile('qwerty');
-      applyTexts(ch, km, rm);
-      profiles.onishi = makeOnishi(snapProfile());
-      legacy = true;
-      note = 'GitHub はまだ古いフォルダ構成（keymaps/albion）なので、それを QWERTY として読み、大西は QWERTY から作った案を表示しています。';
-      dirs = [COMMON_KEYMAP];
-    }
+    const legacy = q[1] === null;
+    if (!legacy && (cc === null || ca === null || cr === null)) throw new Error(`${COMMON_KEYMAP} の共通ファイルがそろっていません`);
+    const old = legacy ? await Promise.all(['config.h', 'keymap.c', 'rules.mk'].map(n => need(`${COMMON_KEYMAP}/${n}`))) : null;
+    const dirs = legacy ? [COMMON_KEYMAP] : [COMMON_KEYMAP, PROF.qwerty.keymap, PROF.onishi.keymap];
     let when = '';
     try {
       const ts = await Promise.all(dirs.map(async d => {
@@ -3447,11 +3428,30 @@ async function ghLoadLatest(manual) {
       const c = ts.filter(Boolean).sort((x, y) => Date.parse(y.commit.committer.date) - Date.parse(x.commit.committer.date))[0];
       if (c) when = `（${new Date(c.commit.committer.date).toLocaleString()} 更新、${c.sha.slice(0, 7)}）`;
     } catch (e) { /* 日時が取れなくても読み込みは続ける */ }
+
+    // ここから下は await なし（途中で画面の操作が入らない）
+    const back = curProfile;
+    let note = '';
+    switchProfile('qwerty');
+    if (!legacy) {
+      // 新しい構成。共通ファイルの中身もいっしょに読む（設定値を探すだけなので、つなげて読めばよい）
+      applyTexts(cc + '\n' + q[0], ca + '\n' + q[1], cr + '\n' + q[2]);
+      if (o[1] !== null) {
+        switchProfile('onishi');
+        applyTexts(cc + '\n' + o[0], ca + '\n' + o[1], cr + '\n' + o[2]);
+      } else {
+        profiles.onishi = makeOnishi(snapProfile());
+        note = '大西用（albion_onishi）はまだ GitHub に無いので、QWERTY から作った案を表示しています。';
+      }
+    } else {
+      applyTexts(old[0], old[1], old[2]);
+      profiles.onishi = makeOnishi(snapProfile());
+      note = 'GitHub はまだ古いフォルダ構成（keymaps/albion）なので、それを QWERTY として読み、大西は QWERTY から作った案を表示しています。';
+    }
     switchProfile(back);
-    bar.className = 'src-bar ok' + (legacy || note ? ' legacy' : '');
+    bar.className = 'src-bar ok' + (note ? ' legacy' : '');
     msg.textContent = `GitHub（${cfg.repo} の ${cfg.branch}）の最新設定を表示しています${when}。${note}`;
   } catch (e) {
-    switchProfile(back);
     bar.className = 'src-bar ng';
     msg.textContent = `GitHub から読み込めなかったので、ツールの初期値を表示しています（${e.message}）。ネットにつながっているか、「GitHub でビルド」画面のリポジトリ名などを確認してください。`;
   }
@@ -3597,6 +3597,9 @@ function switchProfile(name) {
   const ip = document.getElementById('import-prof');
   if (ip) ip.textContent = PROF[curProfile].name;
   render();
+  // 表示中の画面も描き直す（GitHub から読み込み直したときなど、同じ配列のままでも中身が変わるため）
+  if (document.getElementById('page-keymap').classList.contains('active')) buildGrid();
+  if (ktActive()) ktRender();
 }
 
 // QWERTY の設定から大西配列の案を作る（GitHub にまだ大西用が無いときの初期値）。
