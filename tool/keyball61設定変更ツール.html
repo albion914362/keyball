@@ -2646,6 +2646,9 @@ async function ghPushAndBuild() {
   document.getElementById('gh-log').textContent = '';
   let cfg;
   try { cfg = ghConfig(); } catch (e) { ghMsg('error', ghEsc(e.message)); return; }
+  // 開いたときの GitHub 読み込みが失敗していると、画面はツールの初期値のまま。そのまま push すると GitHub の設定が初期値で上書きされる
+  if (!document.getElementById('src-bar').classList.contains('ok') &&
+      !confirm('GitHub の最新設定を読み込めていないため、画面はツールの初期値（または読み込み前の内容）です。\nこのまま push すると GitHub の設定がこの内容で上書きされます（レイヤー別 LED なども）。\n\n続けますか？（やめる場合は「キャンセル」を押し、ページを再読み込みしてください）')) return;
   try {
     if (document.getElementById('gh-remember').checked) localStorage.setItem(GH_TOKEN_KEY, cfg.token);
     else localStorage.removeItem(GH_TOKEN_KEY);
