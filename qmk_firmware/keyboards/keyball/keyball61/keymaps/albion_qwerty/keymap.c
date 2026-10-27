@@ -8,86 +8,11 @@ the Free Software Foundation, either version 2 of the License, or
 (at your option) any later version.
 */
 
+// Keyball61 QWERTY (keymaps/albion_qwerty)
+
 #include QMK_KEYBOARD_H
 #include "quantum.h"
-
-enum custom_keycodes
-{
-  KC_MY_BTN1 = KEYBALL_SAFE_RANGE,
-  KC_MY_BTN2,
-  KC_MY_BTN3
-};
-
-enum click_state
-{
-  NONE = 0,
-  WAITING,
-  CLICKABLE,
-  CLICKING,
-};
-
-enum click_state state;
-uint16_t click_timer;
-
-uint16_t to_reset_time = 800;
-const int16_t to_clickable_movement = 0;
-const uint16_t click_layer = 4;
-
-int16_t mouse_movement;
-
-void enable_click_layer(void)  { layer_on(click_layer);  click_timer = timer_read(); state = CLICKABLE; }
-void disable_click_layer(void) { state = NONE; layer_off(click_layer); }
-int16_t my_abs(int16_t num)    { return num < 0 ? -num : num; }
-bool is_clickable_mode(void)   { return state == CLICKABLE || state == CLICKING; }
-
-bool process_record_user(uint16_t keycode, keyrecord_t *record)
-{
-  switch (keycode) {
-  case KC_MY_BTN1: case KC_MY_BTN2: case KC_MY_BTN3: {
-    report_mouse_t currentReport = pointing_device_get_report();
-    uint8_t btn = 1 << (keycode - KC_MY_BTN1);
-    if (record->event.pressed) { currentReport.buttons |= btn;  state = CLICKING; }
-    else                       { currentReport.buttons &= ~btn; enable_click_layer(); }
-    pointing_device_set_report(currentReport);
-    pointing_device_send();
-    return false;
-  }
-  default:
-    if (record->event.pressed) disable_click_layer();
-  }
-  return true;
-}
-
-report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
-{
-  int16_t current_x = mouse_report.x;
-  int16_t current_y = mouse_report.y;
-  if (current_x != 0 || current_y != 0) {
-    switch (state) {
-    case CLICKABLE: click_timer = timer_read(); break;
-    case CLICKING:  break;
-    case WAITING:
-      mouse_movement += my_abs(current_x) + my_abs(current_y);
-      if (mouse_movement >= to_clickable_movement) { mouse_movement = 0; enable_click_layer(); }
-      break;
-    default: click_timer = timer_read(); state = WAITING; mouse_movement = 0;
-    }
-  } else {
-    switch (state) {
-    case CLICKING: break;
-    case CLICKABLE:
-      if (timer_elapsed(click_timer) > to_reset_time) disable_click_layer();
-      break;
-    case WAITING:
-      if (timer_elapsed(click_timer) > 50) { mouse_movement = 0; state = NONE; }
-      break;
-    default: mouse_movement = 0; state = NONE;
-    }
-  }
-  mouse_report.x = current_x;
-  mouse_report.y = current_y;
-  return mouse_report;
-}
+#include "../albion/auto_mouse.h"
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -304,7 +229,7 @@ void keyboard_post_init_user(void) { rgb_matrix_reload_from_eeprom(); }
 
 layer_state_t layer_state_set_user(layer_state_t state)
 {
-  keyball_set_scroll_mode(get_highest_layer(state) == 3);
+  albion_set_scroll_mode(state);
 #ifdef RGB_MATRIX_ENABLE
   // レイヤーと LED を連動させる（一時的な変更で、保存はされない）
   uint8_t layer = biton32(state);
