@@ -30,7 +30,7 @@ jobs:
     strategy:
       matrix:
         keyboard: [ keyball61 ]
-        keymap: [ test, default, via, albion ]
+        keymap: [ test, default, via, albion_qwerty, albion_onishi ]
 
     uses: ./.github/workflows/build-firmware.yml
     with:

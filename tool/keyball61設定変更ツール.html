@@ -382,6 +382,7 @@ input[type=text]:focus { border-color: var(--accent); }
 .btn-primary:hover { opacity: .85; }
 .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border2); }
 .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+.btn:disabled, .btn:disabled:hover { opacity: .4; cursor: not-allowed; }
 
 /* Code output */
 .code-block {
@@ -512,6 +513,21 @@ input[type=text]:focus { border-color: var(--accent); }
 .flash-alert--done { background: rgba(52,211,153,.1); border-color: rgba(52,211,153,.5); color: var(--green); }
 .flash-alert--error { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.5); color: var(--red); }
 .flash-alert--warn { background: rgba(251,191,36,.1); border-color: rgba(251,191,36,.5); color: var(--amber); margin-bottom: 1rem; }
+/* 配列（QWERTY / 大西）の表示 */
+.prof-tag { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+.prof-tag.qwerty { background: rgba(79,156,249,.15); color: var(--accent); border: 1px solid rgba(79,156,249,.5); }
+.prof-tag.onishi { background: rgba(251,191,36,.12); color: var(--amber); border: 1px solid rgba(251,191,36,.5); }
+.gh-targets { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 4px 0 10px; }
+.gh-targets label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.gh-targets label.locked { opacity: .45; cursor: not-allowed; }
+.gh-diff { font-size: 12px; font-family: var(--mono); color: var(--muted); margin: 6px 0 4px; line-height: 1.8; }
+.gh-diff b { color: var(--amber); font-weight: 500; }
+.flash-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 860px) { .flash-sides { grid-template-columns: 1fr; } }
+.flash-side-title { font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+.flash-side-usb { font-size: 12px; color: var(--amber); margin: 8px 0; }
+.flash-fileinfo.warn { color: var(--amber); }
+.out-sec { margin-top: 2rem; font-size: 13px; font-weight: 500; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
 .flash-log { margin-top: 10px; max-height: 160px; overflow: auto; font-family: var(--mono); font-size: 11px; color: var(--muted); }
 .flash-log:empty { display: none; }
 .gh-input { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); border-radius: 6px; padding: 6px 10px; font-family: var(--mono); font-size: 12px; width: 280px; }
@@ -670,25 +686,39 @@ input[type=text]:focus { border-color: var(--accent); }
     <div class="logo-title">⬡ keyball.cfg</div>
     <div class="logo-sub">keyball61 / QMK firmware</div>
   </div>
-  <div class="nav-group-label">設定</div>
+  <div class="nav-group-label">共通設定</div>
   <div class="nav-item active" onclick="show('mouse', this)">
     <span class="nav-dot"></span>トラックボール
-  </div>
-  <div class="nav-item" onclick="show('rgb', this)">
-    <span class="nav-dot"></span>RGB ライティング
   </div>
   <div class="nav-item" onclick="show('auto', this)">
     <span class="nav-dot"></span>自動マウスレイヤー
   </div>
-  <div class="nav-item" onclick="show('keymap', this)">
+  <div class="nav-group-label">QWERTY 配列設定（左 USB）</div>
+  <div class="nav-item" onclick="show('rgb', this, 'qwerty')">
+    <span class="nav-dot"></span>RGB ライティング
+  </div>
+  <div class="nav-item" onclick="show('keymap', this, 'qwerty')">
     <span class="nav-dot"></span>キーマップ
   </div>
-  <div class="nav-item" onclick="show('keytest', this)">
+  <div class="nav-item" onclick="show('keytest', this, 'qwerty')">
+    <span class="nav-dot"></span>キーテスト
+  </div>
+  <div class="nav-group-label">大西配列設定（右 USB）</div>
+  <div class="nav-item" onclick="show('rgb', this, 'onishi')">
+    <span class="nav-dot"></span>RGB ライティング
+  </div>
+  <div class="nav-item" onclick="show('keymap', this, 'onishi')">
+    <span class="nav-dot"></span>キーマップ
+  </div>
+  <div class="nav-item" onclick="show('keytest', this, 'onishi')">
     <span class="nav-dot"></span>キーテスト
   </div>
   <div class="nav-group-label">出力</div>
-  <div class="nav-item" onclick="show('output', this)">
-    <span class="nav-dot"></span>コード生成
+  <div class="nav-item" onclick="show('output', this, 'qwerty')">
+    <span class="nav-dot"></span>QWERTY 配列のコード生成
+  </div>
+  <div class="nav-item" onclick="show('output', this, 'onishi')">
+    <span class="nav-dot"></span>大西配列のコード生成
   </div>
   <div class="nav-item" onclick="show('ghbuild', this)">
     <span class="nav-dot"></span>GitHub でビルド
@@ -800,6 +830,7 @@ input[type=text]:focus { border-color: var(--accent); }
 <div id="page-rgb" class="page">
   <div class="page-header">
     <div class="page-title">// rgb_matrix</div>
+    <span class="prof-tag"></span>
     <div class="page-desc">LED バックライトの設定 (74 LEDs)</div>
   </div>
 
@@ -988,6 +1019,7 @@ input[type=text]:focus { border-color: var(--accent); }
 <div id="page-keymap" class="page">
   <div class="page-header">
     <div class="page-title">// keymaps</div>
+    <span class="prof-tag"></span>
     <div class="page-desc">キーをクリックして割り当てを変更 — 変更はコード生成に反映されます</div>
   </div>
   <div class="card">
@@ -1068,11 +1100,12 @@ input[type=text]:focus { border-color: var(--accent); }
 <div id="page-output" class="page">
   <div class="page-header">
     <div class="page-title">// generate</div>
+    <span class="prof-tag"></span>
     <div class="page-desc">現在の設定値からファームウェアファイルを生成します</div>
   </div>
 
   <div class="card">
-    <div class="card-header"><span class="card-title">rules.mk — 機能スイッチ</span><span class="card-file">rules.mk</span></div>
+    <div class="card-header"><span class="card-title">機能スイッチ（QWERTY・大西で共通）</span><span class="card-file">albion/rules_common.mk</span></div>
     <div class="card-body">
       <div class="rule-row">
         <div><div class="rule-key">RGB_MATRIX_ENABLE</div><div class="rule-val">RGB マトリクス LED</div></div>
@@ -1105,15 +1138,21 @@ input[type=text]:focus { border-color: var(--accent); }
     </div>
   </div>
 
+  <div class="out-sec" id="out-sec-prof"></div>
   <div id="out-configh"></div>
   <div id="out-keymapC"></div>
   <div id="out-rulesmk"></div>
+  <div class="out-sec">共通ファイル（keymaps/albion/ — QWERTY・大西の両方が読み込む）</div>
+  <div id="out-cconfig"></div>
+  <div id="out-cauto"></div>
+  <div id="out-crules"></div>
 </div>
 
 <!-- キーテスト -->
 <div id="page-keytest" class="page">
   <div class="page-header">
     <div class="page-title">// key test</div>
+    <span class="prof-tag"></span>
     <div class="page-desc">キーボードを押すと、このツールのキーマップ上で押したキーが光ります（書き込み後の動作確認用）</div>
   </div>
 
@@ -1147,7 +1186,8 @@ input[type=text]:focus { border-color: var(--accent); }
     <div class="card-header"><span class="card-title">入力の記録</span><span class="card-file">最新が上</span></div>
     <div class="card-body">
       <pre class="flash-log kt-log" id="kt-log"></pre>
-      <p class="kt-note">・この画面を開いている間はキーの入力を横取りします（Tab や F キーもブラウザでは動きません）。ただし Win キーや Ctrl+Alt+Del など OS が先に使う組み合わせは止められません。<br>
+      <p class="kt-note">・左の USB をつないでいるときは QWERTY 配列、右の USB をつないでいるときは大西配列のキーテストを開いてください（つないだ側のキーマップで動きます）。<br>
+      ・この画面を開いている間はキーの入力を横取りします（Tab や F キーもブラウザでは動きません）。ただし Win キーや Ctrl+Alt+Del など OS が先に使う組み合わせは止められません。<br>
       ・ブラウザに届くのは「どの文字が入力されたか」だけで、キーボード内のレイヤーは見えません。表示のレイヤーは、届いたキーから推測しています（例: F1 が来たら L2、ボールを動かしたら L4）。違う場合はタブで手動で切り替えてください。<br>
       ・かな／英数キーは OS や IME の設定によってはブラウザに届きません。</p>
     </div>
@@ -1158,7 +1198,7 @@ input[type=text]:focus { border-color: var(--accent); }
 <div id="page-ghbuild" class="page">
   <div class="page-header">
     <div class="page-title">// github build</div>
-    <div class="page-desc">今の設定の config.h / keymap.c / rules.mk をフォークに push し、GitHub Actions で .hex をビルドします</div>
+    <div class="page-desc">今の設定のファイルをフォークに push し、GitHub Actions で QWERTY 用・大西用の .hex をビルドします</div>
   </div>
 
   <div class="card">
@@ -1169,8 +1209,8 @@ input[type=text]:focus { border-color: var(--accent); }
         <div class="row-ctrl"><input class="gh-input" id="gh-repo" value="albion914362/keyball"></div>
       </div>
       <div class="row">
-        <div><div class="row-label">ブランチ / キーマップ名</div><div class="row-hint">keymaps/&lt;キーマップ名&gt;/ に3ファイルを置きます</div></div>
-        <div class="row-ctrl"><input class="gh-input gh-short" id="gh-branch" value="main"><input class="gh-input gh-short" id="gh-keymap" value="albion"></div>
+        <div><div class="row-label">ブランチ</div><div class="row-hint">keymaps/ の albion（共通）・albion_qwerty・albion_onishi に置きます</div></div>
+        <div class="row-ctrl"><input class="gh-input gh-short" id="gh-branch" value="main"></div>
       </div>
       <div class="row">
         <div><div class="row-label">アクセストークン</div><div class="row-hint">Fine-grained token（下の説明を参照）</div></div>
@@ -1197,13 +1237,21 @@ input[type=text]:focus { border-color: var(--accent); }
     <div class="card-header"><span class="card-title">push してビルド</span><span class="card-file">build-user.yml</span></div>
     <div class="card-body">
       <ol class="flash-steps">
-        <li>「push してビルド開始」を押すと、今の設定の3ファイルをフォークに上げてビルドを始めます（内容が同じなら push は省略）。</li>
-        <li>ビルドには数分かかります。終わるとこの下に Actions の画面へのリンクが出ます。</li>
-        <li>リンク先の下の方の <strong>Artifacts</strong> から <code>keyball61-&lt;キーマップ名&gt;-firmware</code> をダウンロードし、zip を展開します。</li>
-        <li>中の .hex を「書き込み (.hex)」画面にドラッグして書き込みます。</li>
+        <li>どれをビルドするかを選びます。この画面を開くと GitHub と見比べて、変えた側を自動で選んでおきます。</li>
+        <li>共通設定（トラックボール・自動マウスレイヤー・機能スイッチ）を変えたときは両方に効くので、「両方」しか選べません。</li>
+        <li>「push してビルド開始」を押すと、選んだ側と共通の変更だけをフォークに上げてビルドを始めます（選ばなかった側の変更は上げません）。</li>
+        <li>ビルドには数分かかります。終わるとこの下に Actions の画面へのリンクが出ます。リンク先の <strong>Artifacts</strong> から <code>keyball61-albion_qwerty-firmware</code>（左用）・<code>keyball61-albion_onishi-firmware</code>（右用）をダウンロードし、zip を展開します。</li>
+        <li>中の .hex を「書き込み (.hex)」画面の左用・右用の欄にそれぞれドラッグして書き込みます。</li>
       </ol>
-      <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
+      <div class="gh-targets" id="gh-targets">
+        <label><input type="radio" name="gh-target" value="qwerty"> QWERTY だけ（左）</label>
+        <label><input type="radio" name="gh-target" value="onishi"> 大西だけ（右）</label>
+        <label><input type="radio" name="gh-target" value="both" checked> 両方</label>
+      </div>
+      <div class="gh-diff" id="gh-diff">GitHub と見比べるには「変更を確認」を押してください。</div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
         <button class="btn btn-primary" id="gh-btn" onclick="ghPushAndBuild()">push してビルド開始</button>
+        <button class="btn btn-ghost" id="gh-check-btn" onclick="ghCheck(true)">変更を確認</button>
         <button class="btn btn-ghost" onclick="ghPreview()">push する内容を見る</button>
         <button class="btn btn-ghost" id="gh-test-btn" onclick="ghTest()" title="ビルドも push もせず、トークンと権限だけを確認します">接続テスト</button>
       </div>
@@ -1225,35 +1273,64 @@ input[type=text]:focus { border-color: var(--accent); }
   </div>
 
   <div class="card">
-    <div class="card-header"><span class="card-title">1. ファームウェアを選ぶ</span><span class="card-file">.hex</span></div>
+    <div class="card-header"><span class="card-title">書き込みの手順</span><span class="card-file">Web Serial / AVR109</span></div>
     <div class="card-body">
-      <label class="import-drop" id="drop-hex"
-        ondragover="event.preventDefault();this.classList.add('dragover')"
-        ondragleave="this.classList.remove('dragover')"
-        ondrop="event.preventDefault();this.classList.remove('dragover');loadHexFile(event.dataTransfer.files[0])">
-        <span class="import-drop-icon">📦</span>
-        <span class="import-drop-label">クリックまたはドラッグ&ドロップ（GitHub Actions でビルドした keyball_keyball61_albion.hex など）</span>
-        <input type="file" accept=".hex" onchange="loadHexFile(this.files[0])">
-      </label>
-      <div class="flash-fileinfo" id="hex-info"></div>
+      <ol class="flash-steps">
+        <li>左には QWERTY 用（<code>albion_qwerty</code>）、右には大西用（<code>albion_onishi</code>）の .hex を、下の欄にそれぞれ入れます。ファイル名が欄と合わないときは書き込みを止めます。</li>
+        <li>書き込む側（左 or 右）の USB ケーブルだけをパソコンにつなぎます。左右をつなぐケーブル（TRRS）は、USB を抜いた状態で抜き差ししてください。</li>
+        <li>その側の「書き込む」を押すと、ポート選択の画面が開きます。</li>
+        <li><strong>画面が開いた状態で</strong>キーボードをブートローダーモードにします。L3 の <code>Boot</code> キー（かな長押し＋左下 or 右下）を押すか、基板のリセットボタンを押します（反応しない場合は素早く2回）。</li>
+        <li>一覧に「Arduino Leonardo」「SparkFun Pro Micro」「USB シリアル デバイス」などが出たら、<strong>約 8 秒以内に</strong>選んで「接続」を押します。</li>
+        <li>書き込みと確認（読み戻し）が終わると、キーボードが自動で再起動します。もう片方も、ケーブルをつなぎ替えて同じ手順で書き込みます。</li>
+      </ol>
+      <label class="flash-opt" style="margin-top:10px"><input type="checkbox" id="flash-verify" checked> 書き込み後に読み戻して確認する</label>
+    </div>
+  </div>
+
+  <div class="flash-sides">
+    <div class="card">
+      <div class="card-header"><span class="card-title">左（QWERTY 配列）</span><span class="card-file">albion_qwerty</span></div>
+      <div class="card-body">
+        <label class="import-drop" id="drop-hex-left"
+          ondragover="event.preventDefault();this.classList.add('dragover')"
+          ondragleave="this.classList.remove('dragover')"
+          ondrop="event.preventDefault();this.classList.remove('dragover');loadHexFile(event.dataTransfer.files[0], 'left')">
+          <span class="import-drop-icon">📦</span>
+          <span class="import-drop-label">クリックまたはドラッグ&amp;ドロップ<br>（keyball_keyball61_albion_qwerty.hex）</span>
+          <input type="file" accept=".hex" onchange="loadHexFile(this.files[0], 'left')">
+        </label>
+        <div class="flash-fileinfo" id="hex-info-left"></div>
+        <div class="flash-side-usb">⚠ 左側 の USB だけをつないでから書き込んでください</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary" id="flash-btn-left" onclick="startFlash('left')" disabled>左に書き込む</button>
+          <button class="btn btn-ghost" id="flash-force-left" onclick="flashForce('left')" style="display:none">それでも書き込めるようにする</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">右（大西配列）</span><span class="card-file">albion_onishi</span></div>
+      <div class="card-body">
+        <label class="import-drop" id="drop-hex-right"
+          ondragover="event.preventDefault();this.classList.add('dragover')"
+          ondragleave="this.classList.remove('dragover')"
+          ondrop="event.preventDefault();this.classList.remove('dragover');loadHexFile(event.dataTransfer.files[0], 'right')">
+          <span class="import-drop-icon">📦</span>
+          <span class="import-drop-label">クリックまたはドラッグ&amp;ドロップ<br>（keyball_keyball61_albion_onishi.hex）</span>
+          <input type="file" accept=".hex" onchange="loadHexFile(this.files[0], 'right')">
+        </label>
+        <div class="flash-fileinfo" id="hex-info-right"></div>
+        <div class="flash-side-usb">⚠ 右側 の USB だけをつないでから書き込んでください</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary" id="flash-btn-right" onclick="startFlash('right')" disabled>右に書き込む</button>
+          <button class="btn btn-ghost" id="flash-force-right" onclick="flashForce('right')" style="display:none">それでも書き込めるようにする</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-header"><span class="card-title">2. 書き込む</span><span class="card-file">Web Serial / AVR109</span></div>
+    <div class="card-header"><span class="card-title">進み具合</span><span class="card-file" id="flash-side-now">待機中</span></div>
     <div class="card-body">
-      <ol class="flash-steps">
-        <li>書き込みたい側（左 or 右）の USB ケーブルだけをパソコンにつなぎます。</li>
-        <li>下の「書き込む」を押すと、ポート選択の画面が開きます。</li>
-        <li><strong>画面が開いた状態で</strong>キーボードをブートローダーモードにします。L3 の <code>Boot</code> キー（かな長押し＋左下 or 右下）を押すか、基板のリセットボタンを押します（反応しない場合は素早く2回）。</li>
-        <li>一覧に「Arduino Leonardo」「SparkFun Pro Micro」「USB シリアル デバイス」などが出たら、<strong>約 8 秒以内に</strong>選んで「接続」を押します。</li>
-        <li>書き込みと確認（読み戻し）が終わると、キーボードが自動で再起動します。</li>
-        <li>もう片方の側も、ケーブルをつなぎ替えて同じ手順で書き込みます。</li>
-      </ol>
-      <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
-        <button class="btn btn-primary" id="flash-btn" onclick="startFlash()" disabled>書き込む</button>
-        <label class="flash-opt"><input type="checkbox" id="flash-verify" checked> 書き込み後に読み戻して確認する</label>
-      </div>
       <div class="flash-progress"><div class="flash-bar" id="flash-bar"></div></div>
       <div class="flash-alert" id="flash-msg" style="display:none"></div>
       <pre class="flash-log" id="flash-log"></pre>
@@ -1272,6 +1349,7 @@ input[type=text]:focus { border-color: var(--accent); }
       <button class="modal-close" onclick="closeImportModal()">✕</button>
     </div>
     <div class="modal-body">
+      <div class="row-hint" style="margin-bottom:12px">LED・キーマップは、今表示している配列（<span id="import-prof"></span>）に読み込みます。トラックボールなどの共通設定は両方に効きます。</div>
 
       <!-- config.h -->
       <div class="import-slot" id="slot-configh">
@@ -1334,7 +1412,9 @@ input[type=text]:focus { border-color: var(--accent); }
 
 <script>
 // ---- Nav ----
-function show(page, el) {
+// prof: QWERTY / 大西のどちらの設定を表示するか（RGB・キーマップ・キーテスト・コード生成の画面）
+function show(page, el, prof) {
+  if (prof) switchProfile(prof);
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
@@ -1342,6 +1422,7 @@ function show(page, el) {
   if (page === 'output') render();
   if (page === 'keytest') ktRender();
   if (page === 'keymap') buildGrid();
+  if (page === 'ghbuild') ghCheck(false);
 }
 function setVal(id, v) { document.getElementById(id).textContent = v; }
 
@@ -1677,54 +1758,74 @@ function getS(id, fallback) {
   return el ? el.value : fallback;
 }
 
-function genConfigH() {
-  const cpi  = getV('input[oninput*="cpi-v"]', 700);
-  const scrl = getV('input[oninput*="scrl-v"]', 4);
-  const tap  = getV('input[oninput*="tap-v"]', 5);
-  const br   = getV('input[oninput*="br-v"]', 125);
-  const hue  = getV('input[oninput*="hue-v"]', 125);
-  const sat  = getV('input[oninput*="sat-v"]', 255);
-  const val  = getV('input[oninput*="val-v"]', 125);
-  const mode = getS('rgb-mode', 'RGB_MATRIX_TYPING_HEATMAP');
-  const sp   = getV('input[oninput*="sp-v"]', 32);
-  const cool = getV('input[oninput*="cool-v"]', 25);
+// 共通設定（トラックボール・自動マウスレイヤー・機能スイッチ）。画面は1つなので、いつも画面から読む
+function commonState() {
+  return {
+    cpi:  getV('input[oninput*="cpi-v"]', 700),
+    scrl: getV('input[oninput*="scrl-v"]', 4),
+    tap:  getV('input[oninput*="tap-v"]', 5),
+    rst:  getV('input[oninput*="rst-v"]', 800),
+    thr:  getV('input[oninput*="thr-v"]', 0),
+    clickLyr:  getS('click-layer', '4'),
+    scrollLyr: getS('scroll-layer', '3'),
+    rules: { rgl: ruleVal('tog-rgl'), rgb: ruleVal('tog-rgb'), oled: ruleVal('tog-oled'), via: ruleVal('tog-via') },
+  };
+}
 
+function genCommonConfigH(c) {
   return `/*
- * config.h — Keyball61
+ * albion/config_common.h — Keyball61 (QWERTY / Onishi common settings)
  * Generated by keyball.cfg editor
  */
 #pragma once
 
-#define TAP_CODE_DELAY ${tap}
+#define TAP_CODE_DELAY ${c.tap}
 #define DYNAMIC_KEYMAP_LAYER_COUNT 5
 
-#define KEYBALL_CPI_DEFAULT ${cpi}
-#define KEYBALL_SCROLL_DIV_DEFAULT ${scrl}
+#define KEYBALL_CPI_DEFAULT ${c.cpi}
+#define KEYBALL_SCROLL_DIV_DEFAULT ${c.scrl}`;
+}
+
+function genConfigH(p, name) {
+  const r = p.rgb;
+  return `/*
+ * config.h — Keyball61 ${PROF[name].en} (keymaps/${PROF[name].keymap})
+ * Generated by keyball.cfg editor
+ */
+#pragma once
+
+#include "../${COMMON_KEYMAP}/config_common.h"
 
 // RGB Matrix
 #define RGB_MATRIX_LED_COUNT 74
-#define RGB_MATRIX_MAXIMUM_BRIGHTNESS ${br}
-#define RGB_MATRIX_DEFAULT_HUE ${hue}
-#define RGB_MATRIX_DEFAULT_SAT ${sat}
-#define RGB_MATRIX_DEFAULT_VAL ${val}
+#define RGB_MATRIX_MAXIMUM_BRIGHTNESS ${r.br}
+#define RGB_MATRIX_DEFAULT_HUE ${r.hue}
+#define RGB_MATRIX_DEFAULT_SAT ${r.sat}
+#define RGB_MATRIX_DEFAULT_VAL ${r.val}
 #define RGB_MATRIX_FRAMEBUFFER_EFFECTS
 #define ENABLE_RGB_MATRIX_TYPING_HEATMAP
-#define RGB_MATRIX_TYPING_HEATMAP_SPREAD ${sp}
+#define RGB_MATRIX_TYPING_HEATMAP_SPREAD ${r.sp}
 #define RGB_MATRIX_TYPING_HEATMAP_AREA_LIMIT 16
-#define RGB_MATRIX_TYPING_HEATMAP_DECREASE_DELAY_MS ${cool}
+#define RGB_MATRIX_TYPING_HEATMAP_DECREASE_DELAY_MS ${r.cool}
 #define RGB_MATRIX_KEYPRESSES
-#define ENABLE_RGB_MATRIX_SOLID_REACTIVE_MULTIWIDE${llExtraEffects().map(e => `\n#define ENABLE_RGB_MATRIX_${e}`).join('')}
-#define RGB_MATRIX_DEFAULT_MODE ${mode}`;
+#define ENABLE_RGB_MATRIX_SOLID_REACTIVE_MULTIWIDE${llExtraEffects(p).map(e => `\n#define ENABLE_RGB_MATRIX_${e}`).join('')}
+#define RGB_MATRIX_DEFAULT_MODE ${r.mode}`;
 }
 
+function genCommonRulesMk(c) {
+  return `# albion/rules_common.mk — QWERTY / Onishi common feature switches
+RGBLIGHT_ENABLE = ${c.rules.rgl}
+RGB_MATRIX_ENABLE = ${c.rules.rgb}
+OLED_ENABLE = ${c.rules.oled}
+VIA_ENABLE = ${c.rules.via}`;
+}
+
+// 自分（この rules.mk）の場所から共通の rules_common.mk を読み込む
 function genRulesMk() {
-  return `RGBLIGHT_ENABLE = ${ruleVal('tog-rgl')}
-RGB_MATRIX_ENABLE = ${ruleVal('tog-rgb')}
-OLED_ENABLE = ${ruleVal('tog-oled')}
-VIA_ENABLE = ${ruleVal('tog-via')}`;
+  return `include $(dir $(lastword $(MAKEFILE_LIST)))../${COMMON_KEYMAP}/rules_common.mk`;
 }
 
-function renderCodeBlock(containerId, filename, code) {
+function renderCodeBlock(containerId, filename, code, dlName) {
   const c = document.getElementById(containerId);
   if (!c) return;
   c.innerHTML = `
@@ -1732,7 +1833,7 @@ function renderCodeBlock(containerId, filename, code) {
       <span class="code-filename">${filename}</span>
       <div class="code-btn-group">
         <button class="copy-btn" onclick="copyCode(this, '${containerId}-pre')">コピー</button>
-        <a class="dl-btn" onclick="downloadFile('${containerId}-pre', '${filename}')">↓ ダウンロード</a>
+        <a class="dl-btn" onclick="downloadFile('${containerId}-pre', '${dlName || filename}')">↓ ダウンロード</a>
       </div>
     </div>
     <pre class="code-block" id="${containerId}-pre">${escHtml(code)}</pre>`;
@@ -1761,41 +1862,15 @@ function downloadFile(preId, filename) {
 function fmtRow(keys, start, end) {
   return '    ' + keys.slice(start, end).map(k => (k || '_______').padEnd(12)).join(', ');
 }
-function genKeymapC() {
-  const resetTime  = getV('input[oninput*="rst-v"]', 800);
-  const clickThr   = getV('input[oninput*="thr-v"]', 0);
-  const clickLyr   = getS('click-layer', '4');
-  const scrollLyr  = getS('scroll-layer', '3');
-
-  const scrollCond = scrollLyr === 'both'
+function genAutoMouseH(c) {
+  const scrollCond = c.scrollLyr === 'both'
     ? 'get_highest_layer(state) == 1 || get_highest_layer(state) == 3'
-    : `get_highest_layer(state) == ${scrollLyr}`;
-
-  function layerBlock(n) {
-    const k = layers[n];
-    // 出力は 12,12,12,14,14 キー。内部データは 14 列 x 5 行で、0-2 行目の 12-13 列目は空き
-    const rows = [];
-    for (let r = 0; r < 5; r++) {
-      const s = r * 14, e = s + 14;
-      const slice = k.slice(s, e).map(v => v || '_______');
-      const trimmed = (r < 3) ? slice.slice(0, 12) : slice;
-      rows.push('    ' + trimmed.map(v => v.padEnd(12)).join(', '));
-    }
-    return rows.join(',\n');
-  }
-
+    : `get_highest_layer(state) == ${c.scrollLyr}`;
   return `/*
-Copyright 2022 @Yowkees
-Copyright 2022 MURAOKA Taro (aka KoRoN, @kaoriya)
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 2 of the License, or
-(at your option) any later version.
-*/
-
-#include QMK_KEYBOARD_H
-#include "quantum.h"
+ * albion/auto_mouse.h — Keyball61 auto mouse layer (QWERTY / Onishi common)
+ * Generated by keyball.cfg editor
+ */
+#pragma once
 
 enum custom_keycodes
 {
@@ -1815,9 +1890,9 @@ enum click_state
 enum click_state state;
 uint16_t click_timer;
 
-uint16_t to_reset_time = ${resetTime};
-const int16_t to_clickable_movement = ${clickThr};
-const uint16_t click_layer = ${clickLyr};
+uint16_t to_reset_time = ${c.rst};
+const int16_t to_clickable_movement = ${c.thr};
+const uint16_t click_layer = ${c.clickLyr};
 
 int16_t mouse_movement;
 
@@ -1874,6 +1949,43 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
   mouse_report.y = current_y;
   return mouse_report;
 }
+
+// Scroll mode while these layers are active
+static inline void albion_set_scroll_mode(layer_state_t state)
+{
+  keyball_set_scroll_mode(${scrollCond});
+}`;
+}
+
+function genKeymapC(p, name) {
+  function layerBlock(n) {
+    const k = p.layers[n];
+    // 出力は 12,12,12,14,14 キー。内部データは 14 列 x 5 行で、0-2 行目の 12-13 列目は空き
+    const rows = [];
+    for (let r = 0; r < 5; r++) {
+      const s = r * 14, e = s + 14;
+      const slice = k.slice(s, e).map(v => v || '_______');
+      const trimmed = (r < 3) ? slice.slice(0, 12) : slice;
+      rows.push('    ' + trimmed.map(v => v.padEnd(12)).join(', '));
+    }
+    return rows.join(',\n');
+  }
+
+  return `/*
+Copyright 2022 @Yowkees
+Copyright 2022 MURAOKA Taro (aka KoRoN, @kaoriya)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or
+(at your option) any later version.
+*/
+
+// Keyball61 ${PROF[name].en} (keymaps/${PROF[name].keymap})
+
+#include QMK_KEYBOARD_H
+#include "quantum.h"
+#include "../${COMMON_KEYMAP}/auto_mouse.h"
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -2065,7 +2177,7 @@ led_config_t g_led_config = { {
 #endif
 
 #ifdef RGB_MATRIX_ENABLE
-${llState[0].m ? `void keyboard_post_init_user(void)
+${p.ll[0].m ? `void keyboard_post_init_user(void)
 {
   rgb_matrix_reload_from_eeprom();
   layer_state_set_user(layer_state); // 起動直後から L0 の LED 設定にする
@@ -2074,12 +2186,12 @@ ${llState[0].m ? `void keyboard_post_init_user(void)
 
 layer_state_t layer_state_set_user(layer_state_t state)
 {
-  keyball_set_scroll_mode(${scrollCond});
+  albion_set_scroll_mode(state);
 #ifdef RGB_MATRIX_ENABLE
   // レイヤーと LED を連動させる（一時的な変更で、保存はされない）
   uint8_t layer = biton32(state);
   switch (layer) {
-${genLayerLedCases()}  default:
+${genLayerLedCases(p)}  default:
     rgb_matrix_reload_from_eeprom();
   }
 #endif
@@ -2098,12 +2210,19 @@ void oledkit_render_info_user(void)
 #endif`;
 }
 
+let renderPaused = false;  // 配列の切り替え中など、値を入れ替えている途中は描き直さない
 function render() {
+  if (renderPaused) return;
   llRefresh();
   renderSize();
-  renderCodeBlock('out-configh',  'config.h',  genConfigH());
-  renderCodeBlock('out-keymapC',  'keymap.c',  genKeymapC());
-  renderCodeBlock('out-rulesmk',  'rules.mk',  genRulesMk());
+  const p = snapProfile(), c = commonState(), km = PROF[curProfile].keymap;
+  document.getElementById('out-sec-prof').textContent = `${PROF[curProfile].name}のファイル（keymaps/${km}/ — ${PROF[curProfile].side}に書き込む）`;
+  renderCodeBlock('out-configh', `${km}/config.h`, genConfigH(p, curProfile), 'config.h');
+  renderCodeBlock('out-keymapC', `${km}/keymap.c`, genKeymapC(p, curProfile), 'keymap.c');
+  renderCodeBlock('out-rulesmk', `${km}/rules.mk`, genRulesMk(), 'rules.mk');
+  renderCodeBlock('out-cconfig', `${COMMON_KEYMAP}/config_common.h`, genCommonConfigH(c), 'config_common.h');
+  renderCodeBlock('out-cauto',   `${COMMON_KEYMAP}/auto_mouse.h`,    genAutoMouseH(c),    'auto_mouse.h');
+  renderCodeBlock('out-crules',  `${COMMON_KEYMAP}/rules_common.mk`, genCommonRulesMk(c), 'rules_common.mk');
 }
 
 // ---- Import logic ----
@@ -2184,7 +2303,7 @@ function parseKeymapC(text) {
   // Extract click_layer
   const clM = text.match(/click_layer\s*=\s*(\d+)/);
   // Extract scroll mode layer from keyball_set_scroll_mode(...)
-  const scrollM = text.match(/keyball_set_scroll_mode\s*\(([^)]+)\)/);
+  const scrollM = text.match(/keyball_set_scroll_mode\s*\((.*)\)\s*;/);
   let scrollLayer = null;
   if (scrollM) {
     const cond = scrollM[1];
@@ -2366,7 +2485,9 @@ function applyImport() {
 const FLASH_PAGE_SIZE = 128;
 const FLASH_APP_MAX = 28672;  // ATmega32U4 32KB のうち上位 4KB は Caterina ブートローダー
 
-let hexImage = null;  // ページ境界まで 0xFF で埋めたバイナリ
+// 左右それぞれの .hex（ページ境界まで 0xFF で埋めたバイナリ）。left = QWERTY、right = 大西
+const FLASH_SIDE = { left: 'qwerty', right: 'onishi' };
+const hexImages = { left: null, right: null };
 
 function parseIntelHex(text) {
   const buf = new Uint8Array(32768).fill(0xFF);
@@ -2397,24 +2518,46 @@ function parseIntelHex(text) {
   return { image: buf.slice(0, Math.ceil(maxAddr / FLASH_PAGE_SIZE) * FLASH_PAGE_SIZE), size: maxAddr };
 }
 
-async function loadHexFile(file) {
-  const info = document.getElementById('hex-info');
-  hexImage = null;
-  document.getElementById('flash-btn').disabled = true;
+// ファイル名に、その側のキーマップ名（albion_qwerty / albion_onishi）が入っているかを確かめる。
+// 違うときは書き込めないようにして、「それでも書き込めるようにする」ボタンを出す
+async function loadHexFile(file, side) {
+  const info = document.getElementById('hex-info-' + side);
+  const btn = document.getElementById('flash-btn-' + side), force = document.getElementById('flash-force-' + side);
+  hexImages[side] = null;
+  btn.disabled = true;
+  force.style.display = 'none';
   if (!file) return;
   try {
     const { image, size } = parseIntelHex(await file.text());
-    hexImage = image;
+    hexImages[side] = image;
     const pct = (size / FLASH_APP_MAX * 100).toFixed(1);
-    let note = '';
-    if (!/keyball61/i.test(file.name)) note = '\n⚠ ファイル名に keyball61 が含まれていません。Keyball61 用か確認してください';
-    info.className = 'flash-fileinfo ok';
-    info.textContent = `✓ ${file.name}\n  ${size.toLocaleString()} バイト（容量の ${pct}%）${note}`;
-    document.getElementById('flash-btn').disabled = !('serial' in navigator);
+    const me = PROF[FLASH_SIDE[side]], otherSide = side === 'left' ? 'right' : 'left', other = PROF[FLASH_SIDE[otherSide]];
+    const head = `${file.name}\n  ${size.toLocaleString()} バイト（容量の ${pct}%）`;
+    let warn = '';
+    if (file.name.includes(me.keymap)) warn = '';
+    else if (file.name.includes(other.keymap)) warn = `これは${other.side}（${other.name}）用のファイルです。${me.side}には ${me.keymap} の .hex を入れてください`;
+    else warn = `ファイル名に ${me.keymap} が含まれていません。${me.side}（${me.name}）用のファイルか確認してください`;
+    if (!warn && !/keyball61/i.test(file.name)) warn = 'ファイル名に keyball61 が含まれていません。Keyball61 用か確認してください';
+    if (warn) {
+      info.className = 'flash-fileinfo warn';
+      info.textContent = `⚠ ${head}\n⚠ ${warn}`;
+      force.style.display = '';
+    } else {
+      info.className = 'flash-fileinfo ok';
+      info.textContent = `✓ ${head}`;
+      btn.disabled = !('serial' in navigator);
+    }
   } catch (e) {
     info.className = 'flash-fileinfo error';
     info.textContent = `✕ ${file.name}\n  ${e.message}`;
   }
+}
+function flashForce(side) {
+  const me = PROF[FLASH_SIDE[side]];
+  if (!hexImages[side] || !confirm(`ファイル名が ${me.keymap} と合っていませんが、${me.side}（${me.name}）に書き込めるようにしますか？\n左右を間違えると、配列が入れ替わります。`)) return;
+  document.getElementById('flash-force-' + side).style.display = 'none';
+  document.getElementById('hex-info-' + side).textContent += '\n→ 確認のうえ、書き込めるようにしました';
+  document.getElementById('flash-btn-' + side).disabled = !('serial' in navigator);
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -2526,13 +2669,16 @@ function flashMsg(kind, text) {
   m.textContent = text;
 }
 
-async function startFlash() {
-  if (!hexImage) return;
-  const btn = document.getElementById('flash-btn');
+async function startFlash(side) {
+  const image = hexImages[side];
+  if (!image) return;
+  const me = PROF[FLASH_SIDE[side]];
+  const btn = document.getElementById('flash-btn-' + side);
+  document.getElementById('flash-side-now').textContent = `${me.side}（${me.name}）`;
   const bar = document.getElementById('flash-bar');
   document.getElementById('flash-log').textContent = '';
   bar.style.width = '0';
-  flashMsg('info', 'ポート選択の画面で、キーボードをブートローダーモードにしてから Pro Micro を選んでください。');
+  flashMsg('info', `${me.side}側の USB だけがつながっているか確認してください。ポート選択の画面で、キーボードをブートローダーモードにしてから Pro Micro を選んでください。`);
   let port;
   try {
     port = await navigator.serial.requestPort();
@@ -2546,7 +2692,7 @@ async function startFlash() {
     await avr.open();
     flashLog('ポートに接続しました');
     let last = '';
-    await avr.flash(hexImage, document.getElementById('flash-verify').checked, (pct, msg) => {
+    await avr.flash(image, document.getElementById('flash-verify').checked, (pct, msg) => {
       bar.style.width = pct + '%';
       if (msg !== last && !/^(書き込み中|確認中)/.test(msg)) flashLog(msg);
       last = msg;
@@ -2554,7 +2700,7 @@ async function startFlash() {
     });
     bar.style.width = '100%';
     flashLog('完了');
-    flashMsg('done', '書き込み完了！キーボードが再起動します。もう片方の側も同じ手順で書き込んでください。');
+    flashMsg('done', `${me.side}（${me.name}）の書き込み完了！キーボードが再起動します。もう片方も、USB をつなぎ替えて同じ手順で書き込んでください。`);
   } catch (e) {
     flashLog('エラー: ' + e.message);
     flashMsg('error', e.message);
@@ -2582,24 +2728,32 @@ function ghMsg(kind, html) {
 }
 function ghEsc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
-function ghConfig() {
+const GH_KEYMAPS_DIR = 'qmk_firmware/keyboards/keyball/keyball61/keymaps';
+
+// needToken = false のときはトークンなしでもよい（公開リポジトリの読み込みだけ）
+function ghConfig(needToken = true) {
   const repo = document.getElementById('gh-repo').value.trim();
   const branch = document.getElementById('gh-branch').value.trim();
-  const keymap = document.getElementById('gh-keymap').value.trim();
   const token = document.getElementById('gh-token').value.trim();
   if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error('リポジトリは owner/name の形で入力してください');
   if (!/^[\w.\/-]+$/.test(branch)) throw new Error('ブランチ名が正しくありません');
-  if (!/^[a-z0-9_-]+$/i.test(keymap)) throw new Error('キーマップ名は英数字・_・- だけにしてください');
-  if (!token) throw new Error('アクセストークンを入力してください');
-  return { repo, branch, keymap, token, dir: `qmk_firmware/keyboards/keyball/keyball61/keymaps/${keymap}` };
+  if (needToken && !token) throw new Error('アクセストークンを入力してください');
+  return { repo, branch, token, dir: GH_KEYMAPS_DIR };
 }
 
+// push するファイル一式。キーは keymaps/ からの場所、group は common / qwerty / onishi
 function ghFiles() {
-  return {
-    'config.h': genConfigH() + '\n',
-    'keymap.c': genKeymapC() + '\n',
-    'rules.mk': genRulesMk() + '\n',
-  };
+  const c = commonState(), files = {};
+  files[`${COMMON_KEYMAP}/config_common.h`] = { group: 'common', text: genCommonConfigH(c) + '\n' };
+  files[`${COMMON_KEYMAP}/auto_mouse.h`]    = { group: 'common', text: genAutoMouseH(c) + '\n' };
+  files[`${COMMON_KEYMAP}/rules_common.mk`] = { group: 'common', text: genCommonRulesMk(c) + '\n' };
+  ['qwerty', 'onishi'].forEach(n => {
+    const p = profileState(n), km = PROF[n].keymap;
+    files[`${km}/config.h`] = { group: n, text: genConfigH(p, n) + '\n' };
+    files[`${km}/keymap.c`] = { group: n, text: genKeymapC(p, n) + '\n' };
+    files[`${km}/rules.mk`] = { group: n, text: genRulesMk() + '\n' };
+  });
+  return files;
 }
 
 // raw = true のときは JSON ではなくファイルの中身（文字列）をそのまま受け取る。
@@ -2636,8 +2790,65 @@ async function ghApi(cfg, method, path, body, raw) {
 
 async function ghPreview() {
   const files = ghFiles();
-  ghMsg('info', 'push する内容は「コード生成」画面と同じです。<br>' +
-    Object.entries(files).map(([n, t]) => `${ghEsc(n)}: ${t.split('\n').length} 行`).join('<br>'));
+  ghMsg('info', 'push する内容は「QWERTY 配列のコード生成」「大西配列のコード生成」画面と同じです。<br>' +
+    Object.entries(files).map(([n, f]) => `keymaps/${ghEsc(n)}: ${f.text.split('\n').length} 行`).join('<br>'));
+}
+
+// GitHub のファイルを1つ読む。無ければ null
+async function ghGetFile(cfg, path) {
+  const headers = { Accept: 'application/vnd.github.raw+json' };
+  if (cfg.token) headers.Authorization = 'Bearer ' + cfg.token;
+  const r = await fetch(`https://api.github.com/repos/${cfg.repo}/contents/${path}?ref=${encodeURIComponent(cfg.branch)}`, { headers, cache: 'no-store' });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error(`${path.split('/').slice(-2).join('/')}: ${r.status}`);
+  return r.text();
+}
+
+// ==== GitHub と見比べて、どれが変わったかを調べ、ビルドする側を選んでおく ====
+const GH_GROUP_NAME = { common: '共通', qwerty: 'QWERTY', onishi: '大西' };
+let ghLast = null;  // 最後に見比べた結果
+function ghTarget() { return (document.querySelector('input[name=gh-target]:checked') || {}).value || 'both'; }
+function ghSetTarget(v, lock) {
+  document.querySelectorAll('input[name=gh-target]').forEach(r => {
+    if (r.value === v) r.checked = true;
+    r.disabled = lock && r.value !== v;
+    r.parentElement.classList.toggle('locked', r.disabled);
+  });
+}
+// keep = true のときは選んである側をそのまま使う（共通設定が変わっているときだけ「両方」にする）
+async function ghCheck(manual, keep) {
+  const box = document.getElementById('gh-diff');
+  let cfg;
+  try { cfg = ghConfig(false); } catch (e) { box.textContent = e.message; return null; }
+  box.textContent = 'GitHub と見比べています…';
+  try {
+    const files = ghFiles();
+    const names = Object.keys(files);
+    const [cur, legacy] = await Promise.all([
+      Promise.all(names.map(n => ghGetFile(cfg, `${cfg.dir}/${n}`))),
+      ghGetFile(cfg, `${cfg.dir}/${COMMON_KEYMAP}/keymap.c`),
+    ]);
+    const changed = { common: [], qwerty: [], onishi: [] };
+    names.forEach((n, i) => { if (cur[i] !== files[n].text) changed[files[n].group].push(n); });
+    ghLast = { changed, legacy: legacy !== null, files, cur: Object.fromEntries(names.map((n, i) => [n, cur[i]])) };
+    const has = g => changed[g].length > 0;
+    if (has('common') || ghLast.legacy) ghSetTarget('both', true);
+    else if (keep) ghSetTarget(ghTarget(), false);
+    else if (has('qwerty') && has('onishi')) ghSetTarget('both', false);
+    else if (has('qwerty')) ghSetTarget('qwerty', false);
+    else if (has('onishi')) ghSetTarget('onishi', false);
+    else ghSetTarget(ghTarget(), false);
+    const lines = ['common', 'qwerty', 'onishi'].map(g => `${GH_GROUP_NAME[g]}: ` +
+      (has(g) ? `<b>変更あり</b>（${changed[g].map(n => ghEsc(n.split('/')[1])).join(', ')}）` : '変更なし'));
+    if (ghLast.legacy) lines.unshift('<b>GitHub はまだ古いフォルダ構成（keymaps/albion に3ファイル）です。切り替えが済むまで、ここからは push できません。</b>');
+    else if (has('common')) lines.push('共通設定が変わっているので、両方をビルドします。');
+    else if (!has('qwerty') && !has('onishi')) lines.push('GitHub と同じです（ビルドだけやり直す場合は、ビルドする側を選んでください）。');
+    box.innerHTML = lines.join('<br>');
+    return ghLast;
+  } catch (e) {
+    box.textContent = `GitHub と見比べられませんでした（${e.message}）`;
+    return null;
+  }
 }
 
 async function ghPushAndBuild() {
@@ -2655,76 +2866,85 @@ async function ghPushAndBuild() {
 
   btn.disabled = true;
   try {
-    ghMsg('info', 'GitHub に接続しています…');
-    const files = ghFiles();
+    ghMsg('info', 'GitHub と見比べています…');
+    // 1. GitHub と見比べて、push するファイルとビルドする側を決める
+    const chk = await ghCheck(false, true);
+    if (!chk) throw new Error('GitHub と見比べられませんでした。ネットワークとリポジトリ名を確認してください');
+    if (chk.legacy) throw new Error('GitHub がまだ古いフォルダ構成（keymaps/albion に3ファイル）なので、push できません。先に GitHub 側を新しい構成（albion・albion_qwerty・albion_onishi）に切り替えてください');
+    const target = ghTarget();
+    const sides = target === 'both' ? ['qwerty', 'onishi'] : [target];
+    const push = ['common', ...sides].flatMap(g => chk.changed[g]);
+    const skipped = ['qwerty', 'onishi'].filter(g => !sides.includes(g) && chk.changed[g].length);
+    if (skipped.length && !confirm(`${skipped.map(g => GH_GROUP_NAME[g]).join('・')}の変更（${skipped.flatMap(g => chk.changed[g]).join(', ')}）は今回は push しません（ツールの画面には残ります）。\n\n続けますか？`)) return;
+    ghLog(`ビルドする側: ${sides.map(n => `${PROF[n].short}（${PROF[n].keymap}）`).join('・')}`);
 
-    // 1. 今の内容と比べて、変わったファイルだけ push する
+    // 2. 変わったファイルだけ push する
     const ref = await ghApi(cfg, 'GET', `/git/ref/heads/${cfg.branch}`);
     const headSha = ref.object.sha;
     ghLog(`${cfg.branch} の最新コミット: ${headSha.slice(0, 7)}`);
-    const changed = [];
-    for (const [name, text] of Object.entries(files)) {
-      let current = null;
-      try {
-        current = await ghApi(cfg, 'GET', `/contents/${cfg.dir}/${name}?ref=${encodeURIComponent(cfg.branch)}`, null, true);
-      } catch (e) {
-        if (!/ 404:/.test(e.message)) throw e;  // 404 = まだ無いファイル
-      }
-      if (current !== text) changed.push(name);
-    }
-
-    if (changed.length === 0) {
-      ghLog('3ファイルとも GitHub と同じなので push は省略');
+    if (push.length === 0) {
+      ghLog('push するファイルはありません（GitHub と同じ）');
     } else {
-      ghMsg('info', `push しています（${changed.join(', ')}）…`);
+      ghMsg('info', `push しています（${push.join(', ')}）…`);
       const headCommit = await ghApi(cfg, 'GET', `/git/commits/${headSha}`);
       const tree = await ghApi(cfg, 'POST', '/git/trees', {
         base_tree: headCommit.tree.sha,
-        tree: changed.map(name => ({ path: `${cfg.dir}/${name}`, mode: '100644', type: 'blob', content: files[name] })),
+        tree: push.map(name => ({ path: `${cfg.dir}/${name}`, mode: '100644', type: 'blob', content: chk.files[name].text })),
       });
       const commit = await ghApi(cfg, 'POST', '/git/commits', {
-        message: `keymaps/${cfg.keymap} を keyball61設定変更ツールから更新（${changed.join(', ')}）`,
+        message: `keymaps を keyball61設定変更ツールから更新（${push.join(', ')}）`,
         tree: tree.sha,
         parents: [headSha],
       });
       await ghApi(cfg, 'PATCH', `/git/refs/heads/${cfg.branch}`, { sha: commit.sha });
-      ghLog(`push しました: ${commit.sha.slice(0, 7)}（${changed.join(', ')}）`);
+      ghLog(`push しました: ${commit.sha.slice(0, 7)}（${push.join(', ')}）`);
     }
 
-    // 2. ビルドを開始
-    const startedAt = Date.now();
-    await ghApi(cfg, 'POST', '/actions/workflows/build-user.yml/dispatches', {
-      ref: cfg.branch, inputs: { keyboard: 'keyball61', keymap: cfg.keymap },
-    });
-    ghLog('ビルドを開始しました');
-
-    // 3. 開始したビルドを探して、終わるまで待つ
-    let run = null;
-    for (let i = 0; i < 300; i++) {
-      await new Promise(r => setTimeout(r, i < 10 ? 3000 : 10000));
-      if (!run) {
+    // 3. 選んだ側のビルドを1つずつ開始し、それぞれの実行（run）を見つける
+    const builds = [], seen = new Set();
+    for (const n of sides) {
+      const km = PROF[n].keymap, startedAt = Date.now();
+      await ghApi(cfg, 'POST', '/actions/workflows/build-user.yml/dispatches', {
+        ref: cfg.branch, inputs: { keyboard: 'keyball61', keymap: km },
+      });
+      ghLog(`${PROF[n].short} のビルドを開始しました`);
+      let run = null;
+      for (let i = 0; i < 40 && !run; i++) {
+        ghMsg('info', `${PROF[n].short} のビルドの開始を待っています…`);
+        await sleep(3000);
         const list = await ghApi(cfg, 'GET', `/actions/workflows/build-user.yml/runs?event=workflow_dispatch&branch=${encodeURIComponent(cfg.branch)}&per_page=10`);
-        run = (list.workflow_runs || []).find(r => Date.parse(r.created_at) >= startedAt - 60000);
-        if (!run) { ghMsg('info', 'ビルドの開始を待っています…'); continue; }
-        ghLog(`ビルド #${run.run_number}: ${run.html_url}`);
-      } else {
-        run = await ghApi(cfg, 'GET', `/actions/runs/${run.id}`);
+        const cands = (list.workflow_runs || []).filter(r => Date.parse(r.created_at) >= startedAt - 60000 && !seen.has(r.id))
+          .sort((x, y) => Date.parse(x.created_at) - Date.parse(y.created_at));
+        run = cands.find(r => (r.display_title || '').includes(km)) || cands[0] || null;
       }
-      const link = `<a href="${ghEsc(run.html_url)}" target="_blank" rel="noopener">Actions の画面を開く</a>`;
-      if (run.status !== 'completed') {
-        ghMsg('info', `ビルド中です（${ghEsc(run.status)}）。数分かかります。 ${link}`);
-        continue;
-      }
-      if (run.conclusion === 'success') {
-        ghLog('ビルド成功');
-        ghMsg('done', `ビルドが成功しました。${link} → 下の Artifacts から <code>keyball61-${ghEsc(cfg.keymap)}-firmware</code> をダウンロードして zip を展開し、中の .hex を「書き込み (.hex)」画面にドラッグしてください。`);
-      } else {
-        ghLog(`ビルド失敗: ${run.conclusion}`);
-        ghMsg('error', `ビルドが失敗しました（${ghEsc(run.conclusion)}）。${link} でエラー内容を確認してください。`);
-      }
+      if (!run) throw new Error(`${PROF[n].short} のビルドが見つかりませんでした。GitHub の Actions 画面を直接確認してください`);
+      seen.add(run.id);
+      ghLog(`${PROF[n].short}: ビルド #${run.run_number} ${run.html_url}`);
+      builds.push({ n, run });
+    }
+
+    // 4. 全部終わるまで待つ
+    const line = b => {
+      const link = `<a href="${ghEsc(b.run.html_url)}" target="_blank" rel="noopener">Actions の画面</a>`;
+      const art = `<code>keyball61-${PROF[b.n].keymap}-firmware</code>`;
+      if (b.run.status !== 'completed') return `${PROF[b.n].short}: ビルド中（${ghEsc(b.run.status)}） ${link}`;
+      if (b.run.conclusion === 'success') return `${PROF[b.n].short}: ✓ 成功 → ${link} の Artifacts から ${art} をダウンロードし、中の .hex を「書き込み」画面の<b>${PROF[b.n].side}用</b>の欄へ`;
+      return `${PROF[b.n].short}: ✕ 失敗（${ghEsc(b.run.conclusion)}） → ${link} でエラー内容を確認してください`;
+    };
+    for (let i = 0; i < 300; i++) {
+      if (builds.every(b => b.run.status === 'completed')) break;
+      ghMsg('info', `ビルドしています。数分かかります。<br>${builds.map(line).join('<br>')}`);
+      await sleep(i < 10 ? 5000 : 10000);
+      for (const b of builds) if (b.run.status !== 'completed') b.run = await ghApi(cfg, 'GET', `/actions/runs/${b.run.id}`);
+    }
+    if (!builds.every(b => b.run.status === 'completed')) {
+      ghMsg('error', `ビルドの完了を確認できませんでした。GitHub の Actions 画面を直接確認してください。<br>${builds.map(line).join('<br>')}`);
       return;
     }
-    ghMsg('error', 'ビルドの完了を確認できませんでした。GitHub の Actions 画面を直接確認してください。');
+    builds.forEach(b => ghLog(`${PROF[b.n].short}: ${b.run.conclusion === 'success' ? 'ビルド成功' : 'ビルド失敗: ' + b.run.conclusion}`));
+    const ok = builds.every(b => b.run.conclusion === 'success');
+    ghMsg(ok ? 'done' : 'error', `${ok ? 'ビルドが成功しました。' : 'ビルドに失敗したものがあります。'}<br>${builds.map(line).join('<br>')}`);
+    ghCheck(false);
   } catch (e) {
     ghLog('エラー: ' + e.message);
     ghMsg('error', ghEsc(e.message));
@@ -3044,10 +3264,11 @@ function llRefresh() {
   });
   const warn = document.getElementById('ll-warn');
   const msgs = [];
-  const est = sizeEstimate();
+  const p = snapProfile();
+  const est = sizeEstimate(p);
   const ledCost = est.items.filter(it => it.led).reduce((a, it) => a + it.b, 0);
   if (ledCost > 0) {
-    const extra = llExtraEffects();
+    const extra = llExtraEffects(p);
     msgs.push((extra.length ? `追加で有効にするエフェクト: ${extra.join(', ')}。` : '') +
       `LED の設定で約 ${ledCost} バイト増えます（想定の空き ${(FLASH_APP_MAX - est.total).toLocaleString()} バイト）。` +
       (est.total > FLASH_APP_MAX ? '<b>容量オーバーでビルドが失敗します。</b>' : ''));
@@ -3060,20 +3281,21 @@ function llRefresh() {
 }
 
 // ==== 想定容量 ====
-// 基準は今の設定（keymaps/albion）を GitHub Actions でビルドした結果 28,148 バイト（2026-10-25）。
-// 各項目の増減は、同じソースを手元でビルドして差を測った値（目安）
-const SIZE_BASE = 28148;
+// 基準は「レイヤー別 LED が 1 件・追加エフェクトなし」の場合の値。2026-10-27 の設定（レイヤー別 LED 3 件、RAINBOW_MOVING_CHEVRON）の
+// 実測 28,380 バイト（QWERTY・大西に分けた形でも同じ）から、下の増減を引いて求めた。
+// 各項目の増減は、同じソースを手元でビルドして差を測った値（目安）。QWERTY と大西は別々のファームなので、容量もそれぞれ計算する
+const SIZE_BASE = 28124;
 const SIZE_DELTA = { case: 24, rgbOff: -4748, viaOff: -2778, oledOff: -4062, rgblightOn: 2030 };
 
-function sizeEstimate() {
+function sizeEstimate(p) {
   const items = [];
   const rgb = ruleVal('tog-rgb') === 'yes';
   if (rgb) {
-    llExtraEffects().forEach(x => {
+    llExtraEffects(p).forEach(x => {
       const e = llEffect(x);
       items.push({ t: `エフェクト ${e ? e.label : x}`, b: e ? e.cost : 300, led: true });
     });
-    const cases = llState.filter(st => st.m).length;
+    const cases = p.ll.filter(st => st.m).length;
     if (cases !== 1) items.push({ t: `レイヤー別 LED ${cases} 件（基準は 1 件）`, b: (cases - 1) * SIZE_DELTA.case, led: true });
   } else {
     items.push({ t: 'RGB マトリックスなし（LED 設定は使われない）', b: SIZE_DELTA.rgbOff });
@@ -3088,35 +3310,41 @@ function sizeEstimate() {
 function renderSize() {
   const bar = document.getElementById('size-bar');
   if (!bar) return;
-  const { total, items } = sizeEstimate();
+  const est = { qwerty: sizeEstimate(profileState('qwerty')), onishi: sizeEstimate(profileState('onishi')) };
+  const total = Math.max(est.qwerty.total, est.onishi.total);
   const pct = total / FLASH_APP_MAX * 100, free = FLASH_APP_MAX - total;
   bar.classList.toggle('over', free < 0);
   bar.classList.toggle('warn', free >= 0 && free < 300);
   document.getElementById('size-fill').style.width = Math.min(100, pct).toFixed(1) + '%';
-  document.getElementById('size-num').innerHTML = free >= 0
-    ? `${total.toLocaleString()} / ${FLASH_APP_MAX.toLocaleString()} バイト <small>（${pct.toFixed(1)}%）</small> 空き ${free.toLocaleString()}`
-    : `${total.toLocaleString()} / ${FLASH_APP_MAX.toLocaleString()} バイト <small>（${pct.toFixed(1)}%）</small> ${(-free).toLocaleString()} 超過`;
+  const one = n => {
+    const f = FLASH_APP_MAX - est[n].total;
+    return `${PROF[n].short} ${est[n].total.toLocaleString()}` + (f >= 0 ? `（空き ${f.toLocaleString()}）` : `（<b>${(-f).toLocaleString()} 超過</b>）`);
+  };
+  document.getElementById('size-num').innerHTML = `${one('qwerty')}・${one('onishi')} <small>/ ${FLASH_APP_MAX.toLocaleString()} バイト</small>`;
   const sign = b => (b > 0 ? '+' : '') + b.toLocaleString();
-  const notes = items.filter(it => it.note).map(it => `<div class="bad">⚠ ${it.note}</div>`).join('');
-  document.getElementById('size-detail').innerHTML =
-    `<table><tr><td>今の設定（keymaps/albion）の実測</td><td>${SIZE_BASE.toLocaleString()}</td></tr>` +
-    items.map(it => `<tr><td>${it.t}</td><td>${sign(it.b)}</td></tr>`).join('') +
-    `<tr><td><b>想定合計</b></td><td><b>${total.toLocaleString()}</b></td></tr></table>` + notes +
-    `<div>書き込める上限は ${FLASH_APP_MAX.toLocaleString()} バイト（Pro Micro の 32KB からブートローダー分を除いた量）。` +
+  document.getElementById('size-detail').innerHTML = ['qwerty', 'onishi'].map(n => {
+    const { total, items } = est[n];
+    const notes = items.filter(it => it.note).map(it => `<div class="bad">⚠ ${it.note}</div>`).join('');
+    return `<div style="margin-top:6px"><b>${PROF[n].name}（${PROF[n].keymap}）</b></div>` +
+      `<table><tr><td>基準（レイヤー別 LED 1 件・追加エフェクトなし）</td><td>${SIZE_BASE.toLocaleString()}</td></tr>` +
+      items.map(it => `<tr><td>${it.t}</td><td>${sign(it.b)}</td></tr>`).join('') +
+      `<tr><td><b>想定合計</b></td><td><b>${total.toLocaleString()}</b></td></tr></table>` + notes;
+  }).join('') +
+    `<div>QWERTY と大西は別々のファームなので、容量もそれぞれです。書き込める上限は ${FLASH_APP_MAX.toLocaleString()} バイト（Pro Micro の 32KB からブートローダー分を除いた量）。` +
     `数字は目安で、正確な値はビルド結果（Actions のログの「firmware size」）で確認できます。キー配置・感度・色などの数値は容量に影響しません。</div>`;
 }
 
 // config.h に ENABLE_RGB_MATRIX_xxx を足す必要があるエフェクト（デフォルトモードも含む）
-function llExtraEffects() {
+function llExtraEffects(p) {
   const builtin = ['SOLID_COLOR', 'TYPING_HEATMAP', 'SOLID_REACTIVE_MULTIWIDE'];
-  const list = llState.map(st => st.m);
-  const def = getS('rgb-mode', 'RGB_MATRIX_TYPING_HEATMAP').replace(/^RGB_MATRIX_/, '');
+  const list = p.ll.map(st => st.m);
+  const def = p.rgb.mode.replace(/^RGB_MATRIX_/, '');
   list.push(def);
   return [...new Set(list)].filter(m => m && !builtin.includes(m));
 }
 
-function genLayerLedCases() {
-  return llState.map((st, i) => !st.m ? '' : `  case ${i}:
+function genLayerLedCases(p) {
+  return p.ll.map((st, i) => !st.m ? '' : `  case ${i}:
     rgb_matrix_mode_noeeprom(RGB_MATRIX_${st.m});
     rgb_matrix_sethsv_noeeprom(${st.h}, ${st.s}, ${st.v});
     break;
@@ -3160,42 +3388,70 @@ function parseLayerLed(src) {
   return res;
 }
 
-// ==== 開いたときに GitHub の最新設定（keymaps/<キーマップ名>/ の3ファイル）を読み込む ====
+// ==== 開いたときに GitHub の最新設定を読み込む ====
+// 新しい構成: keymaps/albion（共通）＋ albion_qwerty ＋ albion_onishi。古い構成（keymaps/albion に3ファイル）なら、
+// それを QWERTY として読み、大西は QWERTY から作った案にする。
 // ツール自体は設定を覚えていないので、ビルドに使った GitHub 上のファイルを正とする。
 // トークンが保存されていれば使う（なくても公開リポジトリなら読める）
+function applyTexts(ch, km, rm) {
+  parseFile(ch, 'configh', 'config.h');
+  parseFile(km, 'keymapc', 'keymap.c');
+  parseFile(rm, 'rulesmk', 'rules.mk');
+  applyImport();
+}
 async function ghLoadLatest(manual) {
   const bar = document.getElementById('src-bar'), msg = document.getElementById('src-msg');
-  if (manual && !confirm('GitHub の最新設定を読み込みます。この画面で変更してまだ push していない内容は消えます。よろしいですか？')) return;
-  const repo = document.getElementById('gh-repo').value.trim();
-  const branch = document.getElementById('gh-branch').value.trim();
-  const keymap = document.getElementById('gh-keymap').value.trim();
-  const token = document.getElementById('gh-token').value.trim();
-  const dir = `qmk_firmware/keyboards/keyball/keyball61/keymaps/${keymap}`;
-  const headers = { Accept: 'application/vnd.github.raw+json' };
-  if (token) headers.Authorization = 'Bearer ' + token;
+  if (manual && !confirm('GitHub の最新設定を読み込みます。この画面で変更してまだ push していない内容（QWERTY・大西とも）は消えます。よろしいですか？')) return;
+  let cfg;
+  try { cfg = ghConfig(false); } catch (e) { bar.className = 'src-bar ng'; msg.textContent = e.message; return; }
   bar.className = 'src-bar';
   msg.textContent = 'GitHub の最新設定を読み込んでいます…';
+  const back = curProfile;
   try {
-    const get = async (name) => {
-      const r = await fetch(`https://api.github.com/repos/${repo}/contents/${dir}/${name}?ref=${encodeURIComponent(branch)}`, { headers, cache: 'no-store' });
-      if (!r.ok) throw new Error(`${name}: ${r.status}`);
-      return r.text();
-    };
-    const [ch, km, rm] = await Promise.all(['config.h', 'keymap.c', 'rules.mk'].map(get));
+    const get = name => ghGetFile(cfg, `${cfg.dir}/${name}`);
+    const need = async name => { const t = await get(name); if (t === null) throw new Error(`${name} がありません`); return t; };
+    const [cc, ca, cr] = await Promise.all(['config_common.h', 'auto_mouse.h', 'rules_common.mk'].map(n => get(`${COMMON_KEYMAP}/${n}`)));
+    const q = await Promise.all(['config.h', 'keymap.c', 'rules.mk'].map(n => get(`${PROF.qwerty.keymap}/${n}`)));
+    const o = await Promise.all(['config.h', 'keymap.c', 'rules.mk'].map(n => get(`${PROF.onishi.keymap}/${n}`)));
+    let note = '', legacy = false, dirs = [];
+    if (q[1] !== null) {
+      // 新しい構成。共通ファイルの中身もいっしょに読む（設定値を探すだけなので、つなげて読めばよい）
+      if (cc === null || ca === null || cr === null) throw new Error(`${COMMON_KEYMAP} の共通ファイルがそろっていません`);
+      switchProfile('qwerty');
+      applyTexts(cc + '\n' + q[0], ca + '\n' + q[1], cr + '\n' + q[2]);
+      if (o[1] !== null) {
+        switchProfile('onishi');
+        applyTexts(cc + '\n' + o[0], ca + '\n' + o[1], cr + '\n' + o[2]);
+      } else {
+        profiles.onishi = makeOnishi(snapProfile());
+        note = '大西用（albion_onishi）はまだ GitHub に無いので、QWERTY から作った案を表示しています。';
+      }
+      dirs = [COMMON_KEYMAP, PROF.qwerty.keymap, PROF.onishi.keymap];
+    } else {
+      // 古い構成
+      const [ch, km, rm] = await Promise.all(['config.h', 'keymap.c', 'rules.mk'].map(n => need(`${COMMON_KEYMAP}/${n}`)));
+      switchProfile('qwerty');
+      applyTexts(ch, km, rm);
+      profiles.onishi = makeOnishi(snapProfile());
+      legacy = true;
+      note = 'GitHub はまだ古いフォルダ構成（keymaps/albion）なので、それを QWERTY として読み、大西は QWERTY から作った案を表示しています。';
+      dirs = [COMMON_KEYMAP];
+    }
     let when = '';
     try {
-      const r = await fetch(`https://api.github.com/repos/${repo}/commits?path=${dir}&sha=${encodeURIComponent(branch)}&per_page=1`,
-        { headers: token ? { Authorization: 'Bearer ' + token } : {}, cache: 'no-store' });
-      const c = r.ok ? (await r.json())[0] : null;
+      const ts = await Promise.all(dirs.map(async d => {
+        const r = await fetch(`https://api.github.com/repos/${cfg.repo}/commits?path=${cfg.dir}/${d}&sha=${encodeURIComponent(cfg.branch)}&per_page=1`,
+          { headers: cfg.token ? { Authorization: 'Bearer ' + cfg.token } : {}, cache: 'no-store' });
+        return r.ok ? (await r.json())[0] : null;
+      }));
+      const c = ts.filter(Boolean).sort((x, y) => Date.parse(y.commit.committer.date) - Date.parse(x.commit.committer.date))[0];
       if (c) when = `（${new Date(c.commit.committer.date).toLocaleString()} 更新、${c.sha.slice(0, 7)}）`;
     } catch (e) { /* 日時が取れなくても読み込みは続ける */ }
-    parseFile(ch, 'configh', 'config.h');
-    parseFile(km, 'keymapc', 'keymap.c');
-    parseFile(rm, 'rulesmk', 'rules.mk');
-    applyImport();
-    bar.className = 'src-bar ok';
-    msg.textContent = `GitHub（${repo} の ${branch} / ${keymap}）の最新設定を表示しています${when}`;
+    switchProfile(back);
+    bar.className = 'src-bar ok' + (legacy || note ? ' legacy' : '');
+    msg.textContent = `GitHub（${cfg.repo} の ${cfg.branch}）の最新設定を表示しています${when}。${note}`;
   } catch (e) {
+    switchProfile(back);
     bar.className = 'src-bar ng';
     msg.textContent = `GitHub から読み込めなかったので、ツールの初期値を表示しています（${e.message}）。ネットにつながっているか、「GitHub でビルド」画面のリポジトリ名などを確認してください。`;
   }
@@ -3218,11 +3474,11 @@ function printKeymap() {
         `<span class="pk-code">${ghEsc(k === '_______' ? '___' : k)}</span></div>`;
     }).join('');
     const ball = `<div class="pk-ball" style="left:${(KB_W - 3.5) * U}mm;top:${(3.45 + KB_TOP) * U}mm;width:${1.5 * U}mm;height:${1.5 * U}mm"></div>`;
-    return `<div class="pk-layer"><div class="pk-title">L${n} ${names[n]}<small>上段: 入力される文字 / 下段: 設定上の表記 / ▽: 下のレイヤーと同じ</small></div><div class="pk-board" style="width:${(KB_W + 1) * U}mm;height:${KB_H * U}mm">${ball}${keys}</div></div>`;
+    return `<div class="pk-layer"><div class="pk-title">${PROF[curProfile].short} L${n} ${names[n]}<small>上段: 入力される文字 / 下段: 設定上の表記 / ▽: 下のレイヤーと同じ</small></div><div class="pk-board" style="width:${(KB_W + 1) * U}mm;height:${KB_H * U}mm">${ball}${keys}</div></div>`;
   };
   const src = document.getElementById('src-msg').textContent;
   const pages = [[0, 1], [2, 3], [4]].map(ls =>
-    `<div class="pk-page">${ls.map(layerHtml).join('')}<div class="pk-foot">Keyball61 キーマップ（keyball61設定変更ツール、${new Date().toLocaleString()} 出力）　${ghEsc(src)}</div></div>`).join('');
+    `<div class="pk-page">${ls.map(layerHtml).join('')}<div class="pk-foot">Keyball61 キーマップ ${PROF[curProfile].name}（keyball61設定変更ツール、${new Date().toLocaleString()} 出力）　${ghEsc(src)}</div></div>`).join('');
   document.getElementById('print-area').innerHTML = pages;
   document.body.classList.add('printing-keymap');
   const done = () => { document.body.classList.remove('printing-keymap'); window.removeEventListener('afterprint', done); };
@@ -3279,7 +3535,7 @@ async function ghTest() {
     step(r.res.ok, 'ビルドの仕組み（build-user.yml）', r.res.ok ? `あります（${r.data.state === 'active' ? '有効' : '無効: ' + r.data.state}）` :
       r.res.status === 403 ? '読めません。トークンの Actions を Read and write にしてください' : r.res.status === 404 ? 'リポジトリにありません' : `エラー ${r.res.status}`);
     // 6. Actions の書き込み（ビルドの起動）
-    r = await call('POST', '/actions/workflows/build-user.yml/dispatches', { ref: '__keyball61_tool_connection_test__', inputs: { keyboard: 'keyball61', keymap: cfg.keymap } });
+    r = await call('POST', '/actions/workflows/build-user.yml/dispatches', { ref: '__keyball61_tool_connection_test__', inputs: { keyboard: 'keyball61', keymap: PROF.qwerty.keymap } });
     const actOk = r.res.status === 422;
     step(actOk, 'Actions の書き込み権限（ビルド開始に必要）', actOk ? 'あります' :
       r.res.status === 403 ? '足りません。トークンの Actions を Read and write にしてください' : `判定できませんでした（${r.res.status}: ${r.data && r.data.message || ''}）`);
@@ -3293,13 +3549,87 @@ async function ghTest() {
     : '接続テストで問題が見つかりました。下のログの ✗ の行を確認してください（何も変更していません）。');
 }
 
+// ==== 配列（QWERTY / 大西）の切り替え ====
+// QWERTY は左、大西は右のマイコンに書き込む別々のファーム。RGB・キーマップ・キーテストの画面は1つだけで、
+// 表示中の配列の値を画面に入れて使い、もう片方の値は profiles に預けておく
+const PROF = {
+  qwerty: { name: 'QWERTY 配列', short: 'QWERTY', en: 'QWERTY', side: '左', keymap: 'albion_qwerty' },
+  onishi: { name: '大西配列', short: '大西', en: 'Onishi layout', side: '右', keymap: 'albion_onishi' },
+};
+const COMMON_KEYMAP = 'albion';  // 共通ファイルを置くフォルダ（これだけではビルドできない）
+const RGB_SLIDERS = ['br', 'hue', 'sat', 'val', 'sp', 'cool'];
+let curProfile = 'qwerty';
+const profiles = { qwerty: null, onishi: null };
+
+function snapProfile() {
+  const rgb = { mode: getS('rgb-mode', 'RGB_MATRIX_TYPING_HEATMAP') };
+  RGB_SLIDERS.forEach(k => { rgb[k] = getV(`input[oninput*="${k}-v"]`, 0); });
+  return { rgb, ll: JSON.parse(JSON.stringify(llState)), layers: layers.map(l => l.slice()), ktDone };
+}
+function profileState(name) {
+  return name === curProfile || !profiles[name] ? snapProfile() : profiles[name];
+}
+function loadProfile(p) {
+  renderPaused = true;
+  try {
+    setSelect('rgb-mode', p.rgb.mode);
+    RGB_SLIDERS.forEach(k => setSlider(`input[oninput*="${k}-v"]`, p.rgb[k]));
+    llState = JSON.parse(JSON.stringify(p.ll));
+    p.layers.forEach((l, i) => { layers[i] = l.slice(); });
+    ktDone = p.ktDone || [new Set(), new Set(), new Set(), new Set(), new Set()];
+  } finally { renderPaused = false; }
+  llBuild();
+}
+function switchProfile(name) {
+  if (name !== curProfile) {
+    profiles[curProfile] = snapProfile();
+    curProfile = name;
+    if (!profiles[name]) profiles[name] = makeOnishi(profiles.qwerty);
+    loadProfile(profiles[name]);
+    profiles[name] = null;  // 表示中の配列は画面が正
+    selectedKeyIdx = null;
+    document.getElementById('key-picker').classList.remove('visible');
+  }
+  document.querySelectorAll('.prof-tag').forEach(t => {
+    t.className = 'prof-tag ' + curProfile;
+    t.textContent = `${PROF[curProfile].name}（${PROF[curProfile].side} USB・keymaps/${PROF[curProfile].keymap}）`;
+  });
+  const ip = document.getElementById('import-prof');
+  if (ip) ip.textContent = PROF[curProfile].name;
+  render();
+}
+
+// QWERTY の設定から大西配列の案を作る（GitHub にまだ大西用が無いときの初期値）。
+// L0 の文字 30 個と「-」「/」の位置を入れ替え、L1（Shift 用）の同じ位置のキーもいっしょに動かす。
+// 「/」は大西配列では B の場所になるので、QWERTY で「-」があった右上に置く。LED などはそのまま
+const ONISHI_L0 = {
+  15: 'KC_Q', 16: 'KC_L', 17: 'KC_U', 18: 'KC_COMM', 19: 'KC_DOT', 20: 'KC_F', 21: 'KC_W', 22: 'KC_R', 23: 'KC_Y', 24: 'KC_P',
+  29: 'KC_E', 30: 'KC_I', 31: 'KC_A', 32: 'KC_O', 33: 'KC_MINS', 34: 'KC_K', 35: 'KC_T', 36: 'KC_N', 37: 'KC_S', 38: 'KC_H',
+  43: 'KC_Z', 44: 'KC_X', 45: 'KC_C', 46: 'KC_V', 47: 'KC_SCLN', 50: 'KC_G', 51: 'KC_D', 52: 'KC_M', 53: 'KC_J', 54: 'KC_B',
+  11: 'KC_SLSH',
+};
+function makeOnishi(q) {
+  const o = JSON.parse(JSON.stringify({ rgb: q.rgb, ll: q.ll }));
+  o.layers = q.layers.map(l => l.slice());
+  const slots = Object.keys(ONISHI_L0).map(Number);
+  slots.forEach(t => {
+    const code = ONISHI_L0[t];
+    const src = slots.find(i => q.layers[0][i] === code);
+    o.layers[0][t] = src === undefined ? code : q.layers[0][src];
+    o.layers[1][t] = src === undefined ? `S(${code})` : q.layers[1][src];
+  });
+  o.ktDone = null;
+  return o;
+}
+
 // Init
 initPicker();
 buildGrid();
 initNumInputs();
 initModeSelect();
 llBuild();
-render();
+profiles.onishi = makeOnishi(snapProfile());
+switchProfile('qwerty');
 ghLoadLatest(false);
 </script>
 <div id="print-area"></div>

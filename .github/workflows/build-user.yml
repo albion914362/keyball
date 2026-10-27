@@ -1,4 +1,5 @@
 name: Build a firmware on demand
+run-name: Build keyball61 ${{ inputs.keymap }}
 
 on:
   workflow_dispatch:
@@ -13,7 +14,7 @@ on:
         description: 'Keymap'
         required: true
         type: string
-        default: 'albion'
+        default: 'albion_qwerty'
 
 jobs:
 
