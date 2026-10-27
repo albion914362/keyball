@@ -1205,6 +1205,7 @@ input[type=text]:focus { border-color: var(--accent); }
       <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
         <button class="btn btn-primary" id="gh-btn" onclick="ghPushAndBuild()">push してビルド開始</button>
         <button class="btn btn-ghost" onclick="ghPreview()">push する内容を見る</button>
+        <button class="btn btn-ghost" id="gh-test-btn" onclick="ghTest()" title="ビルドも push もせず、トークンと権限だけを確認します">接続テスト</button>
       </div>
       <div class="flash-alert" id="gh-msg" style="display:none"></div>
       <pre class="flash-log" id="gh-log"></pre>
@@ -3223,6 +3224,69 @@ function printKeymap() {
   const done = () => { document.body.classList.remove('printing-keymap'); window.removeEventListener('afterprint', done); };
   window.addEventListener('afterprint', done);
   window.print();
+}
+
+// ==== 接続テスト: ビルドも push もせずに、トークンと権限を確かめる ====
+// Contents の書き込みは、どこからも参照されない小さなデータ（blob）を作って確認する（履歴やファイルには何も残らない）。
+// Actions の書き込みは、存在しないブランチを指定してビルドを依頼し、権限エラー(403)か「ブランチがない」(422)かで判定する（ビルドは動かない）
+async function ghTest() {
+  const btn = document.getElementById('gh-test-btn');
+  document.getElementById('gh-log').textContent = '';
+  let cfg;
+  try { cfg = ghConfig(); } catch (e) { ghMsg('error', ghEsc(e.message)); return; }
+  ghSaveToken();
+  const call = async (method, url, body) => {
+    const res = await fetch(url.startsWith('http') ? url : `https://api.github.com/repos/${cfg.repo}${url}`, {
+      method,
+      headers: { 'Authorization': `Bearer ${cfg.token}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28',
+        ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined, cache: 'no-store',
+    });
+    const data = res.status === 204 ? null : await res.json().catch(() => ({}));
+    return { res, data };
+  };
+  const results = [];
+  const step = (ok, label, detail) => { results.push(ok); ghLog(`${ok ? '✓' : '✗'} ${label}${detail ? ' — ' + detail : ''}`); return ok; };
+  btn.disabled = true;
+  ghMsg('info', 'GitHub と通信しています（ビルドはしません）…');
+  try {
+    // 1. トークン
+    let r = await call('GET', 'https://api.github.com/user');
+    if (!step(r.res.ok, 'トークン', r.res.ok ? `有効（${r.data.login}）` :
+      r.res.status === 401 ? '無効です。値が間違っているか、期限切れ・削除されています' : `エラー ${r.res.status}`)) throw 0;
+    const exp = r.res.headers.get('github-authentication-token-expiration');
+    if (exp) {
+      const d = new Date(exp.replace(' UTC', 'Z').replace(/^(\S+) (\S+)/, '$1T$2').replace(/ ([+-]\d{2})(\d{2})$/, '$1:$2'));
+      ghLog(`  有効期限: ${isNaN(d) ? exp : d.toLocaleString()}`);
+    }
+    // 2. リポジトリ
+    r = await call('GET', '');
+    if (!step(r.res.ok, `リポジトリ ${cfg.repo}`, r.res.ok ? '読めます' :
+      r.res.status === 404 ? '見つかりません。名前か、トークンの対象リポジトリ（Only select repositories）を確認してください' : `エラー ${r.res.status}`)) throw 0;
+    // 3. ブランチ
+    r = await call('GET', `/git/ref/heads/${cfg.branch}`);
+    step(r.res.ok, `ブランチ ${cfg.branch}`, r.res.ok ? 'あります' : '見つかりません');
+    // 4. Contents の書き込み
+    r = await call('POST', '/git/blobs', { content: 'keyball61設定変更ツール 接続テスト', encoding: 'utf-8' });
+    step(r.res.ok, 'Contents の書き込み権限（push に必要）', r.res.ok ? 'あります' :
+      r.res.status === 403 ? '足りません。トークンの Contents を Read and write にしてください' : `エラー ${r.res.status}: ${r.data.message || ''}`);
+    // 5. ビルドの仕組み
+    r = await call('GET', '/actions/workflows/build-user.yml');
+    step(r.res.ok, 'ビルドの仕組み（build-user.yml）', r.res.ok ? `あります（${r.data.state === 'active' ? '有効' : '無効: ' + r.data.state}）` :
+      r.res.status === 403 ? '読めません。トークンの Actions を Read and write にしてください' : r.res.status === 404 ? 'リポジトリにありません' : `エラー ${r.res.status}`);
+    // 6. Actions の書き込み（ビルドの起動）
+    r = await call('POST', '/actions/workflows/build-user.yml/dispatches', { ref: '__keyball61_tool_connection_test__', inputs: { keyboard: 'keyball61', keymap: cfg.keymap } });
+    const actOk = r.res.status === 422;
+    step(actOk, 'Actions の書き込み権限（ビルド開始に必要）', actOk ? 'あります' :
+      r.res.status === 403 ? '足りません。トークンの Actions を Read and write にしてください' : `判定できませんでした（${r.res.status}: ${r.data && r.data.message || ''}）`);
+  } catch (e) {
+    if (e !== 0) step(false, '通信', `GitHub に接続できませんでした（${e.message}）。ネットワークを確認してください`);
+  } finally {
+    btn.disabled = false;
+  }
+  const ok = results.length === 6 && results.every(Boolean);
+  ghMsg(ok ? 'done' : 'error', ok ? '接続テスト成功: この設定で「push してビルド開始」が使えます（何も変更していません）。'
+    : '接続テストで問題が見つかりました。下のログの ✗ の行を確認してください（何も変更していません）。');
 }
 
 // Init
