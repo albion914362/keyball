@@ -1782,6 +1782,7 @@ function genCommonConfigH(c) {
 
 #define TAP_CODE_DELAY ${c.tap}
 #define DYNAMIC_KEYMAP_LAYER_COUNT 5
+#define DYNAMIC_KEYMAP_MACRO_COUNT 0  // Remap のマクロ機能は使わない（容量を空けるため）
 
 #define KEYBALL_CPI_DEFAULT ${c.cpi}
 #define KEYBALL_SCROLL_DIV_DEFAULT ${c.scrl}`;
@@ -3285,8 +3286,10 @@ function llRefresh() {
 // 基準は「レイヤー別 LED が 1 件・追加エフェクトなし」の場合の値。2026-10-27 の設定（レイヤー別 LED 3 件、RAINBOW_MOVING_CHEVRON）の
 // 実測 28,380 バイト（QWERTY・大西に分けた形でも同じ）から、下の増減を引いて求めた。
 // 各項目の増減は、同じソースを手元でビルドして差を測った値（目安）。QWERTY と大西は別々のファームなので、容量もそれぞれ計算する
-const SIZE_BASE = 28124;
-const SIZE_DELTA = { case: 24, rgbOff: -4748, viaOff: -2778, oledOff: -4062, rgblightOn: 2030 };
+// 2026-10-28 Remap のマクロ機能を外した（DYNAMIC_KEYMAP_MACRO_COUNT 0、実測 -944）ので、基準を 28124 → 27180 に下げた。
+// VIA なしの差もマクロ分がなくなるため -2778 → -1834（実測）
+const SIZE_BASE = 27180;
+const SIZE_DELTA = { case: 24, rgbOff: -4748, viaOff: -1834, oledOff: -4062, rgblightOn: 2030 };
 
 function sizeEstimate(p) {
   const items = [];
