@@ -1955,6 +1955,7 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
 // Scroll mode while these layers are active
 static inline void albion_set_scroll_mode(layer_state_t state)
 {
+  keyball_set_scrollsnap_mode(KEYBALL_SCROLLSNAP_MODE_FREE);  // スクロールは縦横自由
   keyball_set_scroll_mode(${scrollCond});
 }`;
 }
@@ -3288,7 +3289,7 @@ function llRefresh() {
 // 各項目の増減は、同じソースを手元でビルドして差を測った値（目安）。QWERTY と大西は別々のファームなので、容量もそれぞれ計算する
 // 2026-10-28 Remap のマクロ機能を外した（DYNAMIC_KEYMAP_MACRO_COUNT 0、実測 -944）ので、基準を 28124 → 27180 に下げた。
 // VIA なしの差もマクロ分がなくなるため -2778 → -1834（実測）
-const SIZE_BASE = 27180;
+const SIZE_BASE = 27188;
 const SIZE_DELTA = { case: 24, rgbOff: -4748, viaOff: -1834, oledOff: -4062, rgblightOn: 2030 };
 
 function sizeEstimate(p) {
