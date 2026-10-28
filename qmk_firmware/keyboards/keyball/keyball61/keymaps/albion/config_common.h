@@ -6,6 +6,7 @@
 
 #define TAP_CODE_DELAY 5
 #define DYNAMIC_KEYMAP_LAYER_COUNT 5
+#define DYNAMIC_KEYMAP_MACRO_COUNT 0  // Remap のマクロ機能は使わない（容量を空けるため）
 
 #define KEYBALL_CPI_DEFAULT 1800
 #define KEYBALL_SCROLL_DIV_DEFAULT 3
