@@ -1602,12 +1602,13 @@ const PICKER_CATS = [
     {c:'KC_ESC',l:'Esc'},{c:'KC_TAB',l:'Tab'},{c:'KC_SPC',l:'Space'},
     {c:'KC_ENT',l:'Enter'},{c:'KC_BSPC',l:'BkSp'},
     {c:'KC_PSCR',l:'PrtSc'},{c:'KC_SCRL',l:'ScrLk'},{c:'KC_PAUS',l:'Pause'},
-    {c:'KC_MINS',l:'-'},{c:'KC_EQL',l:'='},{c:'KC_LBRC',l:'['},{c:'KC_RBRC',l:']'},
-    {c:'KC_BSLS',l:'\\'},{c:'KC_SCLN',l:';'},{c:'KC_QUOT',l:"'"},{c:'KC_GRV',l:'`'},
-    {c:'KC_COMM',l:','},{c:'KC_DOT',l:'.'},{c:'KC_SLSH',l:'/'},
-    {c:'KC_INT1',l:'_（JP）'},{c:'KC_INT3',l:'¥（JP）'},
+    // 記号は日本語キーボード（JIS）で出る文字。sh は Shift を押したときの文字
+    {c:'KC_MINS',l:'-',sh:'='},{c:'KC_EQL',l:'^',sh:'~'},{c:'KC_INT3',l:'¥',sh:'|'},
+    {c:'KC_LBRC',l:'@',sh:'`'},{c:'KC_RBRC',l:'[',sh:'{'},{c:'KC_NUHS',l:']',sh:'}'},
+    {c:'KC_SCLN',l:';',sh:'+'},{c:'KC_QUOT',l:':',sh:'*'},
+    {c:'KC_COMM',l:',',sh:'<'},{c:'KC_DOT',l:'.',sh:'>'},{c:'KC_SLSH',l:'/',sh:'?'},
+    {c:'KC_INT1',l:'\\',sh:'_'},{c:'KC_GRV',l:'半角/全角'},
     {c:'KC_LNG1',l:'かな'},{c:'KC_LNG2',l:'英数'},
-    {c:'KC_NUHS',l:'#（JP）'},
   ]},
   { id: 'mouse', label: 'マウス', keys: [
     {c:'KC_BTN1',l:'左click'},{c:'KC_BTN2',l:'右click'},{c:'KC_BTN3',l:'中click'},
@@ -1664,14 +1665,14 @@ function renderPickerGrid(filter) {
   if (filter) {
     const f = filter.toLowerCase();
     keys = PICKER_CATS.flatMap(c => c.keys).filter(k =>
-      k.c.toLowerCase().includes(f) || k.l.toLowerCase().includes(f)
+      k.c.toLowerCase().includes(f) || k.l.toLowerCase().includes(f) || (k.sh || '').includes(f)
     );
   }
   const grid = document.getElementById('picker-grid');
   grid.innerHTML = keys.map(k => {
     const isPicked = pickerPending === k.c;
-    const label = k.l.replace(/\n/g, '<br>');
-    const sub = k.s ? `<span class="pkey-sub">${k.s}</span>` : '';
+    const label = ghEsc(k.l).replace(/\n/g, '<br>');
+    const sub = k.s || k.sh ? `<span class="pkey-sub">${ghEsc(k.s || 'Shift: ' + k.sh)}</span>` : '';
     return `<div class="pkey${isPicked ? ' picked' : ''}" onclick="pendKey('${k.c}',this)">${label}${sub}</div>`;
   }).join('');
 }
@@ -1681,13 +1682,13 @@ function filterPicker(val) {
     // search mode: flatten all cats
     const f = val.toLowerCase();
     const keys = PICKER_CATS.flatMap(c => c.keys).filter(k =>
-      k.c.toLowerCase().includes(f) || k.l.toLowerCase().includes(f)
+      k.c.toLowerCase().includes(f) || k.l.toLowerCase().includes(f) || (k.sh || '').includes(f)
     );
     const grid = document.getElementById('picker-grid');
     grid.innerHTML = keys.map(k => {
       const isPicked = pickerPending === k.c;
-      const label = k.l.replace(/\n/g, '<br>');
-      const sub = k.s ? `<span class="pkey-sub">${k.s}</span>` : '';
+      const label = ghEsc(k.l).replace(/\n/g, '<br>');
+      const sub = k.s || k.sh ? `<span class="pkey-sub">${ghEsc(k.s || 'Shift: ' + k.sh)}</span>` : '';
       return `<div class="pkey${isPicked ? ' picked' : ''}" onclick="pendKey('${k.c}',this)">${label}${sub}</div>`;
     }).join('');
   } else {
