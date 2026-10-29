@@ -5,7 +5,7 @@ name: 公式の更新チェック (毎週)
 
 on:
   schedule:
-    - cron: '7 21 * * 0' # 毎週月曜 6:07 (日本時間)
+    - cron: '0 21 * * 0' # 毎週月曜 6:00 (日本時間)
   workflow_dispatch:
     inputs:
       base:
