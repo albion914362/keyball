@@ -847,6 +847,10 @@ input[type=text]:focus { border-color: var(--accent); }
         </div>
         <select id="rgb-mode" onchange="render()"></select>
       </div>
+      <div class="ll-note">
+        ⚠ の付いたエフェクトは、今の設定ではファームに入っていないものです。選ぶとファームに追加され、横の（約○B）くらい書き込み容量が増えます。<br>
+        ⚠ の付いていないものは、すでにファームに入っている（どこかで選んでいる）ので、選んでも容量は増えません。
+      </div>
     </div>
   </div>
 
@@ -911,7 +915,9 @@ input[type=text]:focus { border-color: var(--accent); }
         「通常」は上の基本設定（L3 の LED キーで変えた内容を含む）のまま光ります。<br>
         複数のレイヤーが同時に有効なときは、番号の大きいレイヤーの設定が使われます。<br>
         色はキーボード側で HSV（0–255）に変換して使われ、明るさは「最大輝度」が上限です。<br>
-        ⚠ の付いたエフェクトは書き込み容量を使うため、増やしすぎるとビルドが失敗します。
+        ⚠ の付いたエフェクトは、今の設定ではファームに入っていないものです。選ぶとファームに追加され、横の（約○B）くらい書き込み容量が増えます。<br>
+        ⚠ の付いていないものは、すでにファームに入っている（どこかで選んでいる）ので、選んでも容量は増えません。<br>
+        増やしすぎて想定容量バーの空きがマイナスになると、ビルドが失敗します。
       </div>
     </div>
   </div>
@@ -3218,7 +3224,7 @@ const LL_EFFECTS = [
 // エフェクトの <option> をグループ（<optgroup>）に分けて作る。prefix は value の前に付ける文字列。
 // noNormal のときは「通常」を入れない（デフォルトモード用）
 function llOptions(selected, prefix, noNormal) {
-  const opt = e => `<option value="${prefix}${e.v}"${e.v === selected ? ' selected' : ''}>${e.cost ? '⚠ ' : ''}${e.label}${e.cost ? `（約${e.cost}B）` : ''}</option>`;
+  const opt = e => `<option value="${prefix}${e.v}"${e.v === selected ? ' selected' : ''}>${llLabel(e, e.v === selected)}</option>`;
   const groups = [...new Set(LL_EFFECTS.filter(e => e.g).map(e => e.g))];
   return (noNormal ? '' : LL_EFFECTS.filter(e => !e.g).map(opt).join('')) +
     groups.map(g => `<optgroup label="${g}">${LL_EFFECTS.filter(e => e.g === g).map(opt).join('')}</optgroup>`).join('');
@@ -3244,6 +3250,20 @@ function initModeSelect() {
 }
 
 function llEffect(v) { return LL_EFFECTS.find(e => e.v === v); }
+
+// 選択肢の表示名。inUse（今の設定ですでにファームに入っている）なら ⚠ と容量は出さない
+function llLabel(e, inUse) {
+  return e.cost && !inUse ? `⚠ ${e.label}（約${e.cost}B）` : e.label;
+}
+
+// デフォルトモード・レイヤー別 LED の選択肢の ⚠ を、今の設定に合わせて付け直す
+function llRefreshLabels(p) {
+  const used = new Set(['SOLID_COLOR', 'TYPING_HEATMAP', 'SOLID_REACTIVE_MULTIWIDE', ...llExtraEffects(p)]);
+  document.querySelectorAll('#rgb-mode option, #ll-list select option').forEach(o => {
+    const e = llEffect(o.value.replace(/^RGB_MATRIX_/, ''));
+    if (e && e.v) o.textContent = llLabel(e, used.has(e.v));
+  });
+}
 
 // QMK の HSV (0-255) と <input type=color> の #rrggbb の変換。明るさ(V)は別欄なので色は V=255 で表示
 function hsvToHex(h, s) {
@@ -3301,6 +3321,7 @@ function llRefresh() {
   const warn = document.getElementById('ll-warn');
   const msgs = [];
   const p = snapProfile();
+  llRefreshLabels(p);
   const est = sizeEstimate(p);
   const ledCost = est.items.filter(it => it.led).reduce((a, it) => a + it.b, 0);
   if (ledCost > 0) {
