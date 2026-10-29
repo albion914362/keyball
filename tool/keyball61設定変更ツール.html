@@ -849,7 +849,7 @@ input[type=text]:focus { border-color: var(--accent); }
       </div>
       <div class="ll-note">
         ⚠ の付いたエフェクトは、今の設定ではファームに入っていないものです。選ぶとファームに追加され、横の（約○B）くらい書き込み容量が増えます。<br>
-        ⚠ の付いていないものは、すでにファームに入っている（どこかで選んでいる）ので、選んでも容量は増えません。
+        ⚠ の付いていないものは、すでにファームに入っている（どこかで選んでいる）ので、選んでも容量は増えません（（約○B）は大きさの目安で、すでに容量に含まれています）。
       </div>
     </div>
   </div>
@@ -916,7 +916,7 @@ input[type=text]:focus { border-color: var(--accent); }
         複数のレイヤーが同時に有効なときは、番号の大きいレイヤーの設定が使われます。<br>
         色はキーボード側で HSV（0–255）に変換して使われ、明るさは「最大輝度」が上限です。<br>
         ⚠ の付いたエフェクトは、今の設定ではファームに入っていないものです。選ぶとファームに追加され、横の（約○B）くらい書き込み容量が増えます。<br>
-        ⚠ の付いていないものは、すでにファームに入っている（どこかで選んでいる）ので、選んでも容量は増えません。<br>
+        ⚠ の付いていないものは、すでにファームに入っている（どこかで選んでいる）ので、選んでも容量は増えません（（約○B）は大きさの目安で、すでに容量に含まれています）。<br>
         増やしすぎて想定容量バーの空きがマイナスになると、ビルドが失敗します。
       </div>
     </div>
@@ -3174,6 +3174,7 @@ function initNumInputs() {
 // （27,238 バイト。容量バーの基準と同じくシェブロンは別に数える）へ1つずつ足して手元でビルドし、差を測った値（QMK 0.22.14）。
 // 似たエフェクトは中身を共有するので、まとめて入れると合計より小さくなる（容量バーは合計で出すので安全側。
 // 例: シェブロンと一緒だと虹色系は約 140 バイト小さい）。0 は今のファームにすでに入っているもの。hue: 色の指定が効くか。g: グループ
+// size: いつも入っている（cost 0）エフェクトの大きさの目安。外したときに減る量を測った値で、表示だけに使う
 const LL_EFFECTS = [
   { v: '',                           label: '通常（基本設定のまま）', hue: false, cost: 0 },
   { v: 'SOLID_COLOR',                label: '単色', g: '単色・グラデーション', hue: true, cost: 0 },
@@ -3207,8 +3208,8 @@ const LL_EFFECTS = [
   { v: 'PIXEL_FRACTAL',              label: 'ピクセルフラクタル', g: 'ランダム・雨', hue: false, cost: 474 },
   { v: 'PIXEL_FLOW',                 label: 'ピクセルフロー', g: 'ランダム・雨', hue: false, cost: 592 },
   { v: 'DIGITAL_RAIN',               label: 'デジタルレイン', g: 'ランダム・雨', hue: false, cost: 728 },
-  { v: 'TYPING_HEATMAP',             label: 'タイピングヒートマップ', g: 'キーを押すと光る', hue: false, cost: 0 },
-  { v: 'SOLID_REACTIVE_MULTIWIDE',   label: 'リアクティブ マルチワイド', g: 'キーを押すと光る', hue: true, cost: 0 },
+  { v: 'TYPING_HEATMAP',             label: 'タイピングヒートマップ', g: 'キーを押すと光る', hue: false, cost: 0, size: 660 },
+  { v: 'SOLID_REACTIVE_MULTIWIDE',   label: 'リアクティブ マルチワイド', g: 'キーを押すと光る', hue: true, cost: 0, size: 572 },
   { v: 'SOLID_REACTIVE_WIDE',        label: 'リアクティブ ワイド', g: 'キーを押すと光る', hue: true, cost: 32 },
   { v: 'SOLID_MULTISPLASH',          label: 'マルチスプラッシュ（単色）', g: 'キーを押すと光る', hue: true, cost: 36 },
   { v: 'MULTISPLASH',                label: 'マルチスプラッシュ', g: 'キーを押すと光る', hue: true, cost: 40 },
@@ -3251,9 +3252,10 @@ function initModeSelect() {
 
 function llEffect(v) { return LL_EFFECTS.find(e => e.v === v); }
 
-// 選択肢の表示名。inUse（今の設定ですでにファームに入っている）なら ⚠ と容量は出さない
+// 選択肢の表示名。（約○B）はエフェクトの大きさの目安でいつも出す。⚠ は inUse（今の設定ですでにファームに入っている）でないときだけ
 function llLabel(e, inUse) {
-  return e.cost && !inUse ? `⚠ ${e.label}（約${e.cost}B）` : e.label;
+  const size = e.size || e.cost;
+  return `${e.cost && !inUse ? '⚠ ' : ''}${e.label}${size ? `（約${size}B）` : ''}`;
 }
 
 // デフォルトモード・レイヤー別 LED の選択肢の ⚠ を、今の設定に合わせて付け直す
