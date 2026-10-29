@@ -85,6 +85,5 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
 // Scroll mode while these layers are active
 static inline void albion_set_scroll_mode(layer_state_t state)
 {
-  keyball_set_scrollsnap_mode(KEYBALL_SCROLLSNAP_MODE_FREE);  // スクロールは縦横自由
   keyball_set_scroll_mode(get_highest_layer(state) == 3);
 }
