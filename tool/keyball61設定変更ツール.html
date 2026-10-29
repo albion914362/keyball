@@ -3164,31 +3164,65 @@ function initNumInputs() {
 }
 
 // ==== レイヤーごとの LED ====
-// cost: このエフェクトを有効にしたときに増える書き込み容量（バイト、手元のビルドで計測）。
-// 0 は今のファームにすでに入っているもの。hue: 色の指定が効くか
+// cost: このエフェクトを有効にしたときに増える書き込み容量（バイト）。2026-10-29 に 1928e7a からシェブロンを外した状態
+// （27,238 バイト。容量バーの基準と同じくシェブロンは別に数える）へ1つずつ足して手元でビルドし、差を測った値（QMK 0.22.14）。
+// 似たエフェクトは中身を共有するので、まとめて入れると合計より小さくなる（容量バーは合計で出すので安全側。
+// 例: シェブロンと一緒だと虹色系は約 140 バイト小さい）。0 は今のファームにすでに入っているもの。hue: 色の指定が効くか。g: グループ
 const LL_EFFECTS = [
-  { v: '',                         label: '通常（基本設定のまま）', hue: false, cost: 0 },
-  { v: 'SOLID_COLOR',              label: '単色',                   hue: true,  cost: 0 },
-  { v: 'TYPING_HEATMAP',           label: 'タイピングヒートマップ', hue: false, cost: 0 },
-  { v: 'SOLID_REACTIVE_MULTIWIDE', label: 'リアクティブ マルチワイド', hue: true, cost: 0 },
-  { v: 'SOLID_SPLASH',           label: 'スプラッシュ（単色）', hue: true, cost: 92 },
-  { v: 'SPLASH',                 label: 'スプラッシュ', hue: true, cost: 96 },
-  { v: 'CYCLE_ALL',              label: '全体で色が変化', hue: false, cost: 148 },
-  { v: 'GRADIENT_UP_DOWN',       label: 'グラデーション（上下）', hue: true, cost: 154 },
-  { v: 'GRADIENT_LEFT_RIGHT',    label: 'グラデーション（左右）', hue: true, cost: 162 },
-  { v: 'CYCLE_UP_DOWN',          label: 'レインボー（上下に流れる）', hue: false, cost: 162 },
-  { v: 'CYCLE_LEFT_RIGHT',       label: 'レインボー（左右に流れる）', hue: false, cost: 168 },
-  { v: 'RAINBOW_MOVING_CHEVRON', label: 'レインボー シェブロン', hue: false, cost: 208 },
-  { v: 'HUE_BREATHING',          label: '色相ブリージング', hue: true, cost: 230 },
-  { v: 'BREATHING',              label: 'ブリージング', hue: true, cost: 232 },
-  { v: 'BAND_SAT',               label: 'バンド彩度', hue: true, cost: 240 },
-  { v: 'BAND_VAL',               label: 'バンド明度', hue: true, cost: 242 },
-  { v: 'PIXEL_RAIN',             label: 'ピクセルレイン', hue: false, cost: 288 },
-  { v: 'SOLID_REACTIVE',         label: 'リアクティブ（押すと色変化）', hue: true, cost: 306 },
-  { v: 'SOLID_REACTIVE_SIMPLE',  label: 'リアクティブ（押すと光る）', hue: true, cost: 308 },
-  { v: 'JELLYBEAN_RAINDROPS',    label: 'ジェリービーンズ', hue: false, cost: 318 },
-  { v: 'RAINBOW_BEACON',         label: 'レインボー ビーコン', hue: false, cost: 360 },
+  { v: '',                           label: '通常（基本設定のまま）', hue: false, cost: 0 },
+  { v: 'SOLID_COLOR',                label: '単色', g: '単色・グラデーション', hue: true, cost: 0 },
+  { v: 'ALPHAS_MODS',                label: 'アルファベットと修飾キー', g: '単色・グラデーション', hue: true, cost: 154 },
+  { v: 'GRADIENT_UP_DOWN',           label: 'グラデーション（上下）', g: '単色・グラデーション', hue: true, cost: 154 },
+  { v: 'GRADIENT_LEFT_RIGHT',        label: 'グラデーション（左右）', g: '単色・グラデーション', hue: true, cost: 162 },
+  { v: 'HUE_WAVE',                   label: '色相ウェーブ', g: 'ゆっくり変化', hue: true, cost: 192 },
+  { v: 'HUE_BREATHING',              label: '色相ブリージング', g: 'ゆっくり変化', hue: true, cost: 230 },
+  { v: 'BREATHING',                  label: 'ブリージング', g: 'ゆっくり変化', hue: true, cost: 232 },
+  { v: 'HUE_PENDULUM',               label: '色相ペンデュラム', g: 'ゆっくり変化', hue: true, cost: 258 },
+  { v: 'BAND_SAT',                   label: 'バンド彩度', g: '光の帯', hue: true, cost: 240 },
+  { v: 'BAND_VAL',                   label: 'バンド明度', g: '光の帯', hue: true, cost: 242 },
+  { v: 'BAND_PINWHEEL_SAT',          label: 'バンド ピンホイール彩度', g: '光の帯', hue: true, cost: 332 },
+  { v: 'BAND_PINWHEEL_VAL',          label: 'バンド ピンホイール明度', g: '光の帯', hue: true, cost: 336 },
+  { v: 'BAND_SPIRAL_SAT',            label: 'バンド スパイラル彩度', g: '光の帯', hue: true, cost: 396 },
+  { v: 'BAND_SPIRAL_VAL',            label: 'バンド スパイラル明度', g: '光の帯', hue: true, cost: 400 },
+  { v: 'CYCLE_ALL',                  label: '全体で色が変化', g: '虹色が動く', hue: false, cost: 148 },
+  { v: 'CYCLE_UP_DOWN',              label: 'レインボー（上下に流れる）', g: '虹色が動く', hue: false, cost: 162 },
+  { v: 'CYCLE_LEFT_RIGHT',           label: 'レインボー（左右に流れる）', g: '虹色が動く', hue: false, cost: 168 },
+  { v: 'RAINBOW_MOVING_CHEVRON',     label: 'レインボー シェブロン', g: '虹色が動く', hue: false, cost: 208 },
+  { v: 'CYCLE_OUT_IN',               label: 'レインボー（外→内）', g: '虹色が動く', hue: false, cost: 230 },
+  { v: 'CYCLE_OUT_IN_DUAL',          label: 'レインボー（外→内・2つ）', g: '虹色が動く', hue: false, cost: 280 },
+  { v: 'CYCLE_PINWHEEL',             label: 'レインボー ピンホイール', g: '虹色が動く', hue: false, cost: 320 },
+  { v: 'DUAL_BEACON',                label: 'デュアル ビーコン', g: '虹色が動く', hue: true, cost: 352 },
+  { v: 'RAINBOW_BEACON',             label: 'レインボー ビーコン', g: '虹色が動く', hue: false, cost: 360 },
+  { v: 'CYCLE_SPIRAL',               label: 'レインボー スパイラル', g: '虹色が動く', hue: false, cost: 382 },
+  { v: 'RAINBOW_PINWHEELS',          label: 'レインボー ピンホイールズ', g: '虹色が動く', hue: false, cost: 384 },
+  { v: 'PIXEL_RAIN',                 label: 'ピクセルレイン', g: 'ランダム・雨', hue: false, cost: 288 },
+  { v: 'JELLYBEAN_RAINDROPS',        label: 'ジェリービーンズ', g: 'ランダム・雨', hue: false, cost: 318 },
+  { v: 'RAINDROPS',                  label: 'レインドロップ', g: 'ランダム・雨', hue: true, cost: 350 },
+  { v: 'PIXEL_FRACTAL',              label: 'ピクセルフラクタル', g: 'ランダム・雨', hue: false, cost: 474 },
+  { v: 'PIXEL_FLOW',                 label: 'ピクセルフロー', g: 'ランダム・雨', hue: false, cost: 592 },
+  { v: 'DIGITAL_RAIN',               label: 'デジタルレイン', g: 'ランダム・雨', hue: false, cost: 728 },
+  { v: 'TYPING_HEATMAP',             label: 'タイピングヒートマップ', g: 'キーを押すと光る', hue: false, cost: 0 },
+  { v: 'SOLID_REACTIVE_MULTIWIDE',   label: 'リアクティブ マルチワイド', g: 'キーを押すと光る', hue: true, cost: 0 },
+  { v: 'SOLID_REACTIVE_WIDE',        label: 'リアクティブ ワイド', g: 'キーを押すと光る', hue: true, cost: 32 },
+  { v: 'SOLID_MULTISPLASH',          label: 'マルチスプラッシュ（単色）', g: 'キーを押すと光る', hue: true, cost: 36 },
+  { v: 'MULTISPLASH',                label: 'マルチスプラッシュ', g: 'キーを押すと光る', hue: true, cost: 40 },
+  { v: 'SOLID_REACTIVE_MULTINEXUS',  label: 'リアクティブ マルチネクサス', g: 'キーを押すと光る', hue: true, cost: 92 },
+  { v: 'SOLID_SPLASH',               label: 'スプラッシュ（単色）', g: 'キーを押すと光る', hue: true, cost: 92 },
+  { v: 'SPLASH',                     label: 'スプラッシュ', g: 'キーを押すと光る', hue: true, cost: 96 },
+  { v: 'SOLID_REACTIVE_MULTICROSS',  label: 'リアクティブ マルチクロス', g: 'キーを押すと光る', hue: true, cost: 106 },
+  { v: 'SOLID_REACTIVE_NEXUS',       label: 'リアクティブ ネクサス', g: 'キーを押すと光る', hue: true, cost: 148 },
+  { v: 'SOLID_REACTIVE_CROSS',       label: 'リアクティブ クロス', g: 'キーを押すと光る', hue: true, cost: 162 },
+  { v: 'SOLID_REACTIVE',             label: 'リアクティブ（押すと色変化）', g: 'キーを押すと光る', hue: true, cost: 306 },
+  { v: 'SOLID_REACTIVE_SIMPLE',      label: 'リアクティブ（押すと光る）', g: 'キーを押すと光る', hue: true, cost: 308 },
 ];
+// エフェクトの <option> をグループ（<optgroup>）に分けて作る。prefix は value の前に付ける文字列。
+// noNormal のときは「通常」を入れない（デフォルトモード用）
+function llOptions(selected, prefix, noNormal) {
+  const opt = e => `<option value="${prefix}${e.v}"${e.v === selected ? ' selected' : ''}>${e.cost ? '⚠ ' : ''}${e.label}${e.cost ? `（約${e.cost}B）` : ''}</option>`;
+  const groups = [...new Set(LL_EFFECTS.filter(e => e.g).map(e => e.g))];
+  return (noNormal ? '' : LL_EFFECTS.filter(e => !e.g).map(opt).join('')) +
+    groups.map(g => `<optgroup label="${g}">${LL_EFFECTS.filter(e => e.g === g).map(opt).join('')}</optgroup>`).join('');
+}
 const LL_LAYER_NAMES = ['デフォルト', 'シフト', '数字・矢印', '設定', 'マウス'];
 const HSV_NAMES = {
   AZURE: [132, 102, 255], BLACK: [0, 0, 0], OFF: [0, 0, 0], BLUE: [170, 255, 255], CHARTREUSE: [64, 255, 255],
@@ -3206,8 +3240,7 @@ let llState = [
 function initModeSelect() {
   const sel = document.getElementById('rgb-mode');
   if (!sel || sel.options.length) return;
-  sel.innerHTML = LL_EFFECTS.filter(e => e.v).map(e =>
-    `<option value="RGB_MATRIX_${e.v}"${e.v === 'TYPING_HEATMAP' ? ' selected' : ''}>${e.cost ? '⚠ ' : ''}${e.label}${e.cost ? `（約${e.cost}B）` : ''}</option>`).join('');
+  sel.innerHTML = llOptions('TYPING_HEATMAP', 'RGB_MATRIX_', true);
 }
 
 function llEffect(v) { return LL_EFFECTS.find(e => e.v === v); }
@@ -3231,7 +3264,7 @@ function llBuild() {
   const box = document.getElementById('ll-list');
   if (!box) return;
   box.innerHTML = llState.map((st, i) => {
-    let opts = LL_EFFECTS.map(e => `<option value="${e.v}"${e.v === st.m ? ' selected' : ''}>${e.cost ? '⚠ ' : ''}${e.label}${e.cost ? `（約${e.cost}B）` : ''}</option>`).join('');
+    let opts = llOptions(st.m, '');
     if (!llEffect(st.m)) opts += `<option value="${st.m}" selected>⚠ ${st.m}</option>`;  // 読み込んだ未登録のエフェクト
     return `<div class="ll-row">
       <div class="ll-name">L${i}<small>${LL_LAYER_NAMES[i]}</small></div>
