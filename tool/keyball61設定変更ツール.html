@@ -1121,7 +1121,7 @@ input[type=text]:focus { border-color: var(--accent); }
         </div>
       </div>
       <div class="rule-row">
-        <div><div class="rule-key">OLED_ENABLE</div><div class="rule-val">OLED ディスプレイ</div></div>
+        <div><div class="rule-key">OLED_ENABLE</div><div class="rule-val">OLED ディスプレイ（反対側の犬 Luna も含む）</div></div>
         <div class="toggle-wrap">
           <div class="toggle on" id="tog-oled" onclick="toggleRule(this,'tog-oled-lbl')"></div>
           <span class="toggle-label on" id="tog-oled-lbl">yes</span>
@@ -1791,6 +1791,10 @@ function genCommonConfigH(c) {
 #define DYNAMIC_KEYMAP_MACRO_COUNT 0  // Remap のマクロ機能は使わない（容量を空けるため）
 #define NO_ACTION_ONESHOT  // ワンショットキー（OSM・OSL）は使わない（容量を空けるため）
 #define KEYBALL_SCROLLSNAP_ENABLE 0  // スクロールは常に縦横自由（スナップ機能は使わない、容量を空けるため）
+#ifdef OLED_ENABLE
+#define SPLIT_WPM_ENABLE          // 反対側の OLED の犬（Luna）に打鍵速度を送る
+#define SPLIT_MODS_ENABLE         // 反対側の OLED の犬（Luna）に Shift・Ctrl の状態を送る
+#endif
 
 #define KEYBALL_CPI_DEFAULT ${c.cpi}
 #define KEYBALL_SCROLL_DIV_DEFAULT ${c.scrl}`;
@@ -1825,7 +1829,7 @@ function genCommonRulesMk(c) {
   return `# albion/rules_common.mk — QWERTY / Onishi common feature switches
 RGBLIGHT_ENABLE = ${c.rules.rgl}
 RGB_MATRIX_ENABLE = ${c.rules.rgb}
-OLED_ENABLE = ${c.rules.oled}
+OLED_ENABLE = ${c.rules.oled}${c.rules.oled === 'yes' ? '\nWPM_ENABLE = yes  # 反対側の OLED の犬（Luna）が打鍵速度で動く' : ''}
 VIA_ENABLE = ${c.rules.via}`;
 }
 
@@ -2209,6 +2213,7 @@ ${genLayerLedCases(p)}  default:
 
 #ifdef OLED_ENABLE
 #include "lib/oledkit/oledkit.h"
+#include "../${COMMON_KEYMAP}/oled_luna.h"
 void oledkit_render_info_user(void)
 {
   keyball_oled_render_ballinfo();
@@ -3349,8 +3354,10 @@ function llRefresh() {
 // VIA なしの差もマクロ分がなくなるため -2778 → -1834（実測）
 // 2026-10-29 ワンショット・スクロールスナップ・マルチワイド・OLED の Key 行を外した（実測 -1,424、ビルド 26,022）。
 // 基準はシェブロンなし・レイヤー別 LED 3 件の実測 25,804 から 2 件分を引いた値。RGB/VIA/OLED なしの差も測り直した
-const SIZE_BASE = 25756;
-const SIZE_DELTA = { case: 24, rgbOff: -4176, viaOff: -1812, oledOff: -3870, rgblightOn: 2030 };
+// 2026-10-29 反対側の OLED に犬の Luna（albion/oled_luna.h、WPM・左右の情報送信込み）を入れた（実測 +2,280、ビルド 28,302）。
+// OLED なしにすると Luna と WPM も外れるので、OLED なしの差は -6,150。RGB/VIA なしの差も測り直した
+const SIZE_BASE = 28036;
+const SIZE_DELTA = { case: 24, rgbOff: -4422, viaOff: -1838, oledOff: -6150, rgblightOn: 2030 };
 
 function sizeEstimate(p) {
   const items = [];
@@ -3366,7 +3373,7 @@ function sizeEstimate(p) {
     items.push({ t: 'RGB マトリックスなし（LED 設定は使われない）', b: SIZE_DELTA.rgbOff });
   }
   if (ruleVal('tog-via') === 'no') items.push({ t: 'VIA なし（Remap でのキー変更ができなくなる）', b: SIZE_DELTA.viaOff });
-  if (ruleVal('tog-oled') === 'no') items.push({ t: 'OLED なし（画面表示がなくなる）', b: SIZE_DELTA.oledOff });
+  if (ruleVal('tog-oled') === 'no') items.push({ t: 'OLED なし（画面表示と反対側の犬 Luna がなくなる）', b: SIZE_DELTA.oledOff });
   if (ruleVal('tog-rgl') === 'yes') items.push({ t: 'RGBLIGHT あり', b: SIZE_DELTA.rgblightOn,
     note: 'RGB マトリックスと RGBLIGHT は同時に使えません' });
   return { total: SIZE_BASE + items.reduce((a, it) => a + it.b, 0), items };

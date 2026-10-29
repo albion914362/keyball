@@ -9,6 +9,10 @@
 #define DYNAMIC_KEYMAP_MACRO_COUNT 0  // Remap のマクロ機能は使わない（容量を空けるため）
 #define NO_ACTION_ONESHOT  // ワンショットキー（OSM・OSL）は使わない（容量を空けるため）
 #define KEYBALL_SCROLLSNAP_ENABLE 0  // スクロールは常に縦横自由（スナップ機能は使わない、容量を空けるため）
+#ifdef OLED_ENABLE
+#define SPLIT_WPM_ENABLE          // 反対側の OLED の犬（Luna）に打鍵速度を送る
+#define SPLIT_MODS_ENABLE         // 反対側の OLED の犬（Luna）に Shift・Ctrl の状態を送る
+#endif
 
 #define KEYBALL_CPI_DEFAULT 1800
 #define KEYBALL_SCROLL_DIV_DEFAULT 3
