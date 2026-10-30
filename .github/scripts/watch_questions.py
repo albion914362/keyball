@@ -45,9 +45,10 @@ def find_targets():
                  ... on Discussion { number repository { nameWithOwner owner { login } } }
                  ... on Issue { number repository { nameWithOwner owner { login } } } } } }""" % search_type,
             q=f"author:{ME}{extra}")
-        for n in data["search"]["nodes"]:
-            if n and n["repository"]["owner"]["login"] != ME:
-                targets.add((kind, n["repository"]["nameWithOwner"], n["number"]))
+        found = [(kind, n["repository"]["nameWithOwner"], n["number"]) for n in data["search"]["nodes"]
+                 if n and n["repository"]["owner"]["login"] != ME]
+        log(f"自動で見つけた {kind}: {len(found)} 件")
+        targets.update(found)
     return sorted(targets)
 
 
