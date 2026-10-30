@@ -1,7 +1,8 @@
-# 開発者への質問 (Yowkees/keyball-link の Discussion) に回答が付いたかを
-# 確認し、新しい書き込みがあれば Issue (ラベル「質問の回答」) で知らせる。
+# 開発者への質問 (albion914362 が他の人のリポジトリに立てた Discussion・Issue
+# と .github/watch-questions.txt に書いたもの) に回答が付いたかを確認し、
+# 新しい書き込みがあれば Issue (ラベル「質問の回答」) で知らせる。
 # 書き込みが編集されたときは、前回確認した文との差分を Issue にコメントする。
-# 見張る Discussion を変えるときは下の REPO と NUMBER を書き換える。
+# 中身は .github/scripts/watch_questions.py
 name: 質問への回答チェック
 
 on:
@@ -17,98 +18,10 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Check discussion
+      - uses: actions/checkout@v7
+      - name: Check questions
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          REPO=Yowkees/keyball-link
-          NUMBER=12
-
-          DATA=$(gh api graphql -F owner="${REPO%/*}" -F name="${REPO#*/}" -F number="$NUMBER" -f query='
-            query($owner: String!, $name: String!, $number: Int!) {
-              repository(owner: $owner, name: $name) {
-                discussion(number: $number) {
-                  title url
-                  author { login }
-                  answer { url }
-                  comments(last: 20) {
-                    totalCount
-                    nodes {
-                      author { login } createdAt url body
-                      replies(last: 20) { totalCount nodes { author { login } createdAt url body } }
-                    }
-                  }
-                }
-              }
-            }')
-          D=$(echo "$DATA" | jq '.data.repository.discussion')
-          ME=$(echo "$D" | jq -r '.author.login')
-          # 質問者以外の書き込み (コメントと返信) を新しい順に並べる
-          POSTS=$(echo "$D" | jq --arg me "$ME" '[.comments.nodes[] | ., (.replies.nodes[])]
-            | map(select(.author.login != $me)) | sort_by(.createdAt) | reverse')
-          COUNT=$(echo "$POSTS" | jq length)
-          TITLE=$(echo "$D" | jq -r .title)
-          URL=$(echo "$D" | jq -r .url)
-          echo "質問者以外の書き込み: $COUNT 件" | tee -a "$GITHUB_STEP_SUMMARY"
-          [ "$COUNT" -eq 0 ] && exit 0
-
-          LATEST=$(echo "$POSTS" | jq -r '.[0].url')
-          # 編集の検知用に、全書き込みの本文を Issue 本文の末尾に隠して残す
-          SNAPSHOT=$(echo "$POSTS" | jq -c 'map({url, author: .author.login, body})' | base64 -w0)
-          {
-            echo "<!-- discussion-watch: $REPO#$NUMBER latest: $LATEST -->"
-            echo "質問「[$TITLE]($URL)」に回答・返信が付きました（質問者以外の書き込み $COUNT 件）。"
-            echo
-            echo "$POSTS" | jq -r '.[:5][] | "### \(.author.login)（\(.createdAt[:10])）\n\n\(.body)\n\n[元の書き込み](\(.url))\n"'
-            echo "<!-- snapshot: $SNAPSHOT -->"
-          } > body.md
-
-          gh label create "質問の回答" --color 1D76DB --description "開発者への質問に回答があった" --force
-          gh label create "解説済み" --color 0E8A16 --description "Claude が解説を書いた" --force
-
-          ISSUE=$(gh issue list --label "質問の回答" --state all --limit 50 --json number,body,state \
-            --jq "map(select(.body | contains(\"discussion-watch: $REPO#$NUMBER \"))) | .[0] // empty")
-          if [ -z "$ISSUE" ]; then
-            gh issue create --title "質問に回答あり: $TITLE" --label "質問の回答" --body-file body.md
-            exit 0
-          fi
-          NUM=$(echo "$ISSUE" | jq -r .number)
-          if ! echo "$ISSUE" | grep -qF "latest: $LATEST "; then
-            gh issue reopen "$NUM" || true
-            gh issue edit "$NUM" --body-file body.md --remove-label "解説済み"
-            gh issue comment "$NUM" --body "新しい書き込みがありました。本文を最新の内容に書き換えました。"
-            exit 0
-          fi
-
-          # 新しい書き込みがないときは、前回の本文と比べて編集を探す
-          OLD=$(echo "$ISSUE" | jq -r .body | sed -n 's/.*<!-- snapshot: \([A-Za-z0-9+/=]*\) -->.*/\1/p' | head -n1)
-          if [ -z "$OLD" ]; then
-            # 本文の記録がまだない Issue は、記録だけ足して終わる (通知しない)
-            gh issue edit "$NUM" --body-file body.md
-            echo "前回から新しい書き込みはない (編集検知用の記録を追加)" | tee -a "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          echo "$OLD" | base64 -d > old.json
-          echo "$SNAPSHOT" | base64 -d > new.json
-          python3 - <<'PY' > diff.md
-          import difflib, json
-          old = {p["url"]: p for p in json.load(open("old.json"))}
-          for p in json.load(open("new.json")):
-              before = old.get(p["url"])
-              if not before or before["body"] == p["body"]:
-                  continue
-              diff = difflib.unified_diff(before["body"].splitlines(), p["body"].splitlines(),
-                                          "修正前", "修正後", lineterm="")
-              print(f"### {p['author']} の書き込みが修正されました\n\n[元の書き込み]({p['url']})\n")
-              print("```diff\n" + "\n".join(diff) + "\n```\n")
-          PY
-          if [ ! -s diff.md ]; then
-            echo "前回から新しい書き込みも修正もない" | tee -a "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          gh issue reopen "$NUM" || true
-          gh issue edit "$NUM" --body-file body.md --remove-label "解説済み"
-          gh issue comment "$NUM" --body-file diff.md
-          echo "書き込みの修正を検知" | tee -a "$GITHUB_STEP_SUMMARY"
+          QUESTION_AUTHOR: albion914362
+        run: python3 .github/scripts/watch_questions.py
