@@ -1,11 +1,11 @@
 # 開発者への質問 (Yowkees/keyball-link の Discussion) に回答が付いたかを
-# 2 時間ごと (00 分) に確認し、新しい書き込みがあれば Issue (ラベル「質問の回答」) で知らせる。
+# 確認し、新しい書き込みがあれば Issue (ラベル「質問の回答」) で知らせる。
 # 見張る Discussion を変えるときは下の REPO と NUMBER を書き換える。
 name: 質問への回答チェック
 
 on:
-  schedule:
-    - cron: '0 */2 * * *' # 2 時間ごとの 00 分 (日本時間 1:00, 3:00, …, 23:00)
+  # GitHub の定期実行は混雑で大きく遅れたり抜けたりするため使わない。
+  # Claude の定期タスク (2 時間ごとの 00 分) が手動実行し、結果を見て通知する。
   workflow_dispatch:
 
 permissions:

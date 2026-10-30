@@ -4,8 +4,8 @@
 name: 公式の更新チェック (毎週)
 
 on:
-  schedule:
-    - cron: '0 21 * * 0' # 毎週月曜 6:00 (日本時間)
+  # GitHub の定期実行は混雑で大きく遅れたり抜けたりするため使わない。
+  # Claude の定期タスク (毎週月曜 6:00) が手動実行し、結果を見て解説する。
   workflow_dispatch:
     inputs:
       base:
