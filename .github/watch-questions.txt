@@ -1,0 +1,5 @@
+# 回答を見張る質問の一覧（自動で見つからないもの用）
+# albion914362 が他の人のリポジトリに書いた Discussion と Issue は自動で見張るので、
+# ここに書くのは「他の人が立てた質問に自分がコメントしたもの」などだけでよい。
+# 書き方: 種類(discussion か issue) リポジトリ 番号
+discussion Yowkees/keyball-link 12
