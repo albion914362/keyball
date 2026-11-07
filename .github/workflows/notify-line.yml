@@ -1,0 +1,28 @@
+# 通知案内スレッドと同じお知らせを LINE にも送る。
+# Claude の定期タスクが、通知するときに文面を渡して手動実行する。
+# 送信に使う合い言葉は Secrets (LINE_CHANNEL_ACCESS_TOKEN, LINE_USER_ID) に入れる。
+# 中身は .github/scripts/notify_line.py
+name: LINEに通知
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: LINE に送る文面
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Send to LINE
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          LINE_MESSAGE: ${{ inputs.message }}
+        run: python3 .github/scripts/notify_line.py
