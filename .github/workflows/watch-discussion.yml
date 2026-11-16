@@ -1,19 +1,14 @@
-# 開発者への質問 (albion914362 が他の人のリポジトリに立てた Discussion・Issue
-# と .github/watch-questions.txt に書いたもの) に回答が付いたかを確認し、
-# 新しい書き込みがあれば Issue (ラベル「質問の回答」) で知らせる。
-# 書き込みが編集されたときは、前回確認した文との差分を Issue にコメントする。
-# 中身は .github/scripts/watch_questions.py
 name: 質問への回答チェック
-
 on:
-  # GitHub の定期実行は混雑で大きく遅れたり抜けたりするため使わない。
-  # Claude の定期タスク (2 時間ごとの 00 分) が手動実行し、結果を見て通知する。
+  # 毎時 00 分に GitHub が自動で動かす (混雑で遅れたり抜けたりすることがある)。
+  # 抜けや自動停止は Claude の毎日の見回りタスクが確認する。
+  schedule:
+    - cron: '0 * * * *'
   workflow_dispatch:
-
 permissions:
   contents: read
   issues: write
-
+  actions: read
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -24,4 +19,45 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           QUESTION_AUTHOR: albion914362
+          LINE_FILE: line.txt
         run: python3 .github/scripts/watch_questions.py
+
+      # 回答・書き込み・修正を検知したら LINE に送る
+      - name: Notify LINE (detected)
+        if: always() && hashFiles('line.txt') != ''
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: |
+          export LINE_MESSAGE="$(cat line.txt)
+          くわしくは通知案内スレッドで"
+          python3 .github/scripts/notify_line.py
+
+      # 失敗・復旧は「状態が変わったときだけ」LINE に送る (毎時同じ失敗を送らない)
+      - name: Check previous result
+        id: prev
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prev=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/watch-discussion.yml/runs?status=completed&per_page=1" \
+                 --jq '.workflow_runs[0].conclusion // "success"' || echo success)
+          echo "conclusion=$prev" >> "$GITHUB_OUTPUT"
+          echo "前回の結果: $prev"
+      - name: Notify LINE (failed)
+        if: failure() && steps.prev.outputs.conclusion == 'success'
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          LINE_MESSAGE: |
+            ⚠️ 質問への回答チェックが失敗しました
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            直るまで同じ失敗はLINEに送りません。原因は毎日の見回りで通知案内スレッドに書きます。
+        run: python3 .github/scripts/notify_line.py
+      - name: Notify LINE (recovered)
+        if: success() && steps.prev.outputs.conclusion != 'success'
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          LINE_MESSAGE: ✅ 質問への回答チェックが復旧しました（今回は成功）
+        run: python3 .github/scripts/notify_line.py

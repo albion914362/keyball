@@ -8,12 +8,20 @@ import base64, difflib, json, os, subprocess, sys
 ME = os.environ["QUESTION_AUTHOR"]
 LIST_FILE = ".github/watch-questions.txt"
 SUMMARY = os.environ.get("GITHUB_STEP_SUMMARY", "/dev/null")
+# 検知した内容を LINE 用にまとめて書き出すファイル (ワークフローが LINE に送る)
+LINE_FILE = os.environ.get("LINE_FILE", "line.txt")
 
 
 def log(msg):
     print(msg)
     with open(SUMMARY, "a") as f:
         f.write(msg + "\n\n")
+
+
+def notify_line(what, title, url, issue_url):
+    """LINE に送る1件分を LINE_FILE に書き足す (送るのはワークフローの次のステップ)。"""
+    with open(LINE_FILE, "a") as f:
+        f.write(f"🔔 質問「{title}」に{what}のを検知しました\n質問ページ: {url}\nIssue: {issue_url}\n\n")
 
 
 def gh(*args):
@@ -114,8 +122,10 @@ def check(kind, repo, number, issues):
 
     issue = next((i for i in issues if marker in i["body"]), None)
     if issue is None:
-        gh("issue", "create", "--title", f"質問に回答あり: {title}", "--label", "質問の回答", "--body-file", "body.md")
+        issue_url = gh("issue", "create", "--title", f"質問に回答あり: {title}", "--label", "質問の回答",
+                       "--body-file", "body.md").strip()
         log("→ 新しい回答を検知 (Issue を作成)")
+        notify_line("回答が付いた", title, url, issue_url)
         return
     num = str(issue["number"])
     if f"latest: {latest} " not in issue["body"]:
@@ -123,6 +133,7 @@ def check(kind, repo, number, issues):
         gh("issue", "edit", num, "--body-file", "body.md", "--remove-label", "解説済み")
         gh("issue", "comment", num, "--body", "新しい書き込みがありました。本文を最新の内容に書き換えました。")
         log(f"→ 新しい書き込みを検知 (Issue #{num})")
+        notify_line("新しい書き込みがあった", title, url, issue["url"])
         return
     # 新しい書き込みがないときは、前回の本文と比べて編集を探す
     old = snapshot_of(issue["body"])
@@ -141,6 +152,7 @@ def check(kind, repo, number, issues):
     gh("issue", "edit", num, "--body-file", "body.md", "--remove-label", "解説済み")
     gh("issue", "comment", num, "--body-file", "diff.md")
     log(f"→ 書き込みの修正を検知 (Issue #{num})")
+    notify_line("付いた回答が修正された", title, url, issue["url"])
 
 
 def main():
@@ -149,7 +161,7 @@ def main():
     targets = find_targets()
     log(f"見張っている質問: {len(targets)} 件")
     issues = json.loads(gh("issue", "list", "--label", "質問の回答", "--state", "all", "--limit", "200",
-                           "--json", "number,body"))
+                           "--json", "number,body,url"))
     failed = 0
     for kind, repo, number in targets:
         try:
@@ -157,7 +169,7 @@ def main():
         except subprocess.CalledProcessError as e:
             failed += 1
             log(f"{kind} {repo}#{number} の確認に失敗: {e.stderr.strip()}")
-    # 1 件でも失敗したら run を失敗にして、Claude の定期タスクに気づかせる
+    # 1 件でも失敗したら run を失敗にする (LINE で知らせ、Claude の毎日の見回りでも気づく)
     sys.exit(1 if failed else 0)
 
 
